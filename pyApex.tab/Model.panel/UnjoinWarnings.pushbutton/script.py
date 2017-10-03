@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*- 
-__doc__ = 'Unjoin selected elements by pairs from warnings text'
+__doc__ = 'Unjoin selected elements by pairs from warnings reports'
 __title__ = 'Unjoin Warnings'
 
 from scriptutils import logger

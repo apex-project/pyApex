@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*- 
-__doc__ = 'Lists all the sheets in the project.'
+__doc__ = 'Copying Visibility-Graphics filters'
 from System.Collections.Generic import List
 from Autodesk.Revit.DB import *
 from scriptutils import logger
