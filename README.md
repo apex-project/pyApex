@@ -3,6 +3,21 @@ Apex Project BIM Utils - an extension for [pyRevit](http://eirannejad.github.io/
 
 ![Preview image](https://raw.githubusercontent.com/apex-project/pyApex/master/preview.png)
 
+## Инструкция по установке
+
+1. Скачайте и установите pyRevit http://eirannejad.github.io/pyRevit/ (на время установки необходимо подключение к интернету)
+
+2. Откройте Revit, на вкладке pyRevit - Extenstions, выберите в списке pyApex и нажмите Install Package. Готово! :ok_hand:
+
+![Extensions](https://raw.githubusercontent.com/apex-project/pyApex/master/extensions.png)
+
+## Installation
+
+1. Download and install pyRevit from http://eirannejad.github.io/pyRevit/
+
+2. Open Revit. Then install extension from pyRevit tab - Extensions - select pyApex and click Install Package. Voila!
+
+
 ## Features
 
 1. Selection
@@ -44,29 +59,6 @@ Apex Project BIM Utils - an extension for [pyRevit](http://eirannejad.github.io/
 - Select duplicate tags
 
 
-## Installation
-
-1. Download and install pyRevit from http://eirannejad.github.io/pyRevit/
-
-2. Add this text to pyRevit extension.json at your pyrevit installation ( pyRevit\\extensions )
-
-```
-,{
-"builtin": "False",
-"enable": "True",
-"type": "extension",
-"name": "pyApex",
-"description": "Apex Project BIM Utils",
-"author": "APEX Project",
-"author-url": "https://github.com/apex-project/",
-"url": "https://github.com/apex-project/pyApex.git",
-"website": "https://github.com/apex-project/pyApex",
-"image" : "",
-"dependencies": []
-}
-```
-
-3. Add pyApex extension by Extension button http://eirannejad.github.io/pyRevit/sharingextensions/
 
 ## Contribution
 
