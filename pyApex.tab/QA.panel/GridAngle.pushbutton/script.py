@@ -22,11 +22,7 @@ from scriptutils import logger
 from scriptutils.userinput import CommandSwitchWindow
 import itertools
 
-# def addtoclipboard(text):
-#     command = 'echo ' + text.strip() + '| clip'
-#     os.system(command)
 
-#неясно, как реализовать выбор параметра-родителя тэга (tag.Door, tag.Room и т.д.)
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 
@@ -42,18 +38,6 @@ def get_grids(view_id = None, ids=False):
     else:
         return grids.ToElements()
 
-# def get_first_level():
-#     cl = FilteredElementCollector(doc)
-#     levels = cl.OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().ToElements()
-#     if(len(levels) > 0):
-#         return levels[0]
-#
-# def floorplan_id():
-#     cl = FilteredElementCollector(doc);
-#     viewFamilyTypes = cl.OfClass(ViewFamilyType).ToElements();
-#     for e in viewFamilyTypes:
-#         if e and e.ViewFamily == ViewFamily.FloorPlan:
-#             return e.Id
 
 def curve_angle(crv, mode="deg", precision_max=5):
     pt_start = crv.GetEndPoint(0)
@@ -160,7 +144,6 @@ def find_outlier_grids(grids_grouped):
     return result
 
 
-
 def get_design_options(doc):
     cl = FilteredElementCollector(doc)
 
@@ -176,17 +159,6 @@ def get_design_options(doc):
         do_dict[s_id].append(do.Id)
 
     return do_dict
-    # t = Transaction(doc)
-    #
-    # for do in elements:
-    #     t.Start("create views")
-    #     floorView = ViewPlan.Create(doc, floorplan_id(), get_first_level().Id)
-    #     floorView.Name = "01_GridAngles_%s" % do.Name
-    #
-    #     t.Commit()
-    #     t.Start("create do")
-    #     p_do = floorView.get_Parameter(BuiltInParameter.DESIGN_OPTION_ID).Set(do.Id)
-    #     t.Commit()
 
 
 def check_element_designoption(element, design_options):
@@ -226,7 +198,7 @@ def run(interactive=False):
     if design_options_dict:
         elements_by_do = group_by_design_options(grids_linear, design_options_dict)
     else:
-        elements_by_do = [elements,]
+        elements_by_do = [grids_linear,]
 
     ids_bad_to_override = []
     ids_orphaned = []
@@ -267,7 +239,7 @@ def run(interactive=False):
             print("\n\n")
 
     if type(doc.ActiveView) == ViewPlan and len(ids_bad_to_override) > 0:
-        text = "Mark outliers grids on active plan view \"%s\"?" % doc.ActiveView.Name
+        text = "Check completed\n%d errors found. Mark outliers grids on active plan view \"%s\"?" %(len(ids_bad_to_override), doc.ActiveView.Name)
         a = TaskDialog.Show(__title__, text,
             TaskDialogCommonButtons.Yes|TaskDialogCommonButtons.No)
 
@@ -297,9 +269,7 @@ def run(interactive=False):
 
         t.Commit()
 
-
+    if len(ids_bad_to_override) == 0:
+        TaskDialog.Show(__title__, "Check completed\n0 errors")
 
 run(interactive=True)
-
-# else:
-#   TaskDialog.Show(__title__,"Ошибка при выборе категории")
