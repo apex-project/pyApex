@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*- 
-__doc__ = 'create worksets'
+__doc__ = 'Pin links and check worksets.\nCreates worksets if necessary'
 from System.Collections.Generic import List
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB.Architecture import RoomTag
@@ -72,8 +72,9 @@ class CheckPinned(Check):
     def check_one(self, e, k):
         t = doc.GetElement(k)
         filename = t.get_Parameter(BuiltInParameter.ALL_MODEL_TYPE_NAME).AsString()
+        is_nested = doc.GetElement(e.GetTypeId()).IsNestedLink
 
-        if e.Pinned == False:
+        if e.Pinned == False and not is_nested:
             message = '%s instance not pinned' % (filename,)
             if message not in self.errors:
                 self.errors[message] = []
@@ -84,6 +85,7 @@ class CheckPinned(Check):
         t.Start()
         for vv in self.errors.values():
             for e in vv:
+                
                 e.Pinned = True
         t.Commit()
 
@@ -99,33 +101,40 @@ class SaveSharedCoordinatesCallback(ISaveSharedCoordinatesCallback):
 class CheckShared(Check):
     def __init__(self, elements):
         super(self.__class__, self).__init__(elements)
+        self.fix_text = "Отключите общие координаты:"
 
     def check_one(self, e, k):
         t = doc.GetElement(k)
         filename = t.get_Parameter(BuiltInParameter.ALL_MODEL_TYPE_NAME).AsString()
+        is_nested = doc.GetElement(e.GetTypeId()).IsNestedLink
 
-        message = '%s has shared position enabled' % (filename,)
-        if message not in self.errors:
-            self.errors[message] = []
-        self.errors[message].append(e)
+        if not is_nested and "<" not in e.Name:
+            message = '%s has shared position enabled' % (filename,)
+            if message not in self.errors:
+                self.errors[message] = []
+            self.errors[message].append(e)
 
     def fix(self):
-        t = Transaction(doc, 'Fix links - Shared coordinates')
-        t.Start()
-        for vv in self.errors.values():
-            for e in vv:
-                type_id = e.GetTypeId()
-                type_el = doc.GetElement(type_id)
-                translation = XYZ(1, 0, 0)
-                print(e.GetTotalTransform().BasisX, e.GetTotalTransform().BasisY, e.GetTotalTransform().BasisZ,
-                      e.GetTotalTransform().Determinant, e.GetTotalTransform().Origin)
-                try:
-                    ElementTransformUtils.MoveElement(doc, e.Id, translation)
-                except:
-                    print("Move failed")
-                print(type_el)
-                print(type_el.SavePositions(SaveSharedCoordinatesCallback()))
-        t.RollBack()
+        pass
+        # t = Transaction(doc, 'Fix links - Shared coordinates')
+        # t.Start()
+        # for vv in self.errors.values():
+        #     for e in vv:
+        #         is_nested = doc.GetElement(e.GetTypeId()).IsNestedLink
+        #         if is_nested:
+        #             continue
+        #         type_id = e.GetTypeId()
+        #         type_el = doc.GetElement(type_id)
+        #         translation = XYZ(1, 0, 0)
+        #         print(e.GetTotalTransform().BasisX, e.GetTotalTransform().BasisY, e.GetTotalTransform().BasisZ,
+        #               e.GetTotalTransform().Determinant, e.GetTotalTransform().Origin)
+        #         try:
+        #             ElementTransformUtils.MoveElement(doc, e.Id, translation)
+        #         except:
+        #             print("Move failed")
+        #         print(type_el)
+        #         print(type_el.SavePositions(SaveSharedCoordinatesCallback()))
+        # t.RollBack()
 
 
 class CheckWorkset(Check):
@@ -139,11 +148,10 @@ class CheckWorkset(Check):
             self.all_worksets[w.Id.IntegerValue] = w.Name
 
     def check_one(self, e, k):
-        # print(e.Id,k)
         ws_name = self.all_worksets[e.WorksetId.IntegerValue]
         m = re.match(self.allowed_pattern, ws_name, re.I)
-
-        if not m:
+        is_nested = doc.GetElement(e.GetTypeId()).IsNestedLink
+        if not m and not is_nested:
             t = doc.GetElement(k)
             filename = t.get_Parameter(BuiltInParameter.ALL_MODEL_TYPE_NAME).AsString()
             ws_name_new = file2ws_name(filename)
@@ -156,22 +164,32 @@ class CheckWorkset(Check):
     def fix(self):
         needed_workset = set()
         [[needed_workset.add(v[1]) for v in vv] for vv in self.errors.values()]
-        t = Transaction(doc, 'Workset')
+        t = Transaction(doc, 'Workset creation')
         t.Start()
-
         for ws in needed_workset:
             if ws not in self.all_worksets.values():
-                print("new worset %s" % ws)
+                print("new workset %s" % ws)
                 ws_new = Workset.Create(doc, ws)
                 self.all_worksets[ws_new.Id.IntegerValue] = ws
                 # e, new_value = self.errors[k]
+        t.Commit()
+        t = Transaction(doc, 'Workset change')
+        t.Start()
         all_worksets_inv = {v: k for k, v in self.all_worksets.iteritems()}
+
         for vv in self.errors.values():
             for e, ws_name_new in vv:
+                is_nested = doc.GetElement(e.GetTypeId()).IsNestedLink
+                if is_nested:
+                    continue
+
                 wsparam = e.get_Parameter(BuiltInParameter.ELEM_PARTITION_PARAM)
+
                 if (wsparam == None):
                     continue
+
                 wsparam.Set(all_worksets_inv[ws_name_new])
+        
         t.Commit()
 
 
@@ -199,12 +217,7 @@ def collect_links():
 
 
 links = collect_links()
-# pprint(links)
-# CheckWorkset(links).run()
-# CheckPinned(links).run()
+if doc.IsWorkshared:
+    CheckWorkset(links).run()
+CheckPinned(links).run()
 CheckShared(links).run()
-# pprint(ch_ws.errors)
-
-
-
-# print links
