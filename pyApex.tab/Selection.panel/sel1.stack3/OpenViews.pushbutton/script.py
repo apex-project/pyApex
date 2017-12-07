@@ -5,7 +5,7 @@ Context: Some views should be selected
 
 Чтобы сэкономить время, которое тратится на рендеринг при открытии вида, эта кнопка открывает несколько выделенных видов одним нажатием.
 Контекст: Должны быть выбраны несколько видов в браузере проекта или на листе"""
-__context__ = 'Views'
+__context__ = 'Selection'
 
 from revitutils import doc, uidoc, selection
 from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, View
