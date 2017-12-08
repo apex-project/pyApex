@@ -33,6 +33,13 @@
             <li><a href="{{ site.github.repository_url }}">View On <strong>GitHub</strong></a></li>
           </ul>
         {% endif %}
+        
+        <div class="docs">
+        {% for doc in site.docs %}
+            <h3><a href="https://apex-project.github.io/pyApex/{{ doc.permalink }}">{{ doc.title }}</a></h3>
+        {% endfor %}
+        </div>
+      </div>
       </header>
       <section>
 
