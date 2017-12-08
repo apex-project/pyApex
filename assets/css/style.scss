@@ -1,0 +1,16 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+@import url('https://fonts.googleapis.com/css?family=PT+Sans');
+
+a.deepLink {
+  display: inline-block;
+  padding: 5px;
+  color: #999;
+  opacity: 0.2;
+}
+a.deepLink:hover {
+  opacity: 1;
+}
