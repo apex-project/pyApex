@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: default
 title: Install guide / Инструкция по установке
 permalink: /
 ---
