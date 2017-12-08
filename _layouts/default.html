@@ -34,9 +34,9 @@
           </ul>
         {% endif %}
         
-        <p class="docs">
-        {% for post in site.posts %}
-            <h3><a href="https://apex-project.github.io/pyApex/{{ post.permalink }}">{{ post.title }}</a></h3>
+        <p class="pages">
+        {% for page in site.pages %}
+            <a href="https://apex-project.github.io/pyApex/{{ page.permalink }}">{{ page.title }}</a>
         {% endfor %}
         </p>
       </header>
