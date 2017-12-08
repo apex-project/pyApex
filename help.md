@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Features and help
-permalink: /help/
+permalink: help
 ---
 
 # 1. Selection
