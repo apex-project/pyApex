@@ -1,8 +1,9 @@
 ---
 layout: default
-title: Install guide / Инструкция по установке
+title: Install
 permalink: /
 ---
+# Install guide / Инструкция по установке
 
 ###### RU
 
