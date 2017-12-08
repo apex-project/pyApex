@@ -1,4 +1,8 @@
-# Install guide / Инструкция по установке
+---
+layout: page
+title: Install guide / Инструкция по установке
+permalink: /
+---
 
 ##### RU
 
