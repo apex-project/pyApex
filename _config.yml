@@ -1,1 +1,9 @@
+title: pyApex
+description: Apex Project BIM Utils - pyRevit extension
 theme: jekyll-theme-minimal
+
+sass:
+  style: :compressed
+
+plugins:
+  - jemoji
