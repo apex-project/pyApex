@@ -27,15 +27,24 @@ h2,h3,h4,h5,h6 {
 body {
   font-size: 1.1em;
 }
+p.pages {
+  margin-top: 20px;
+}
 p.pages a{
     text-decoration: underline;
   display: block;
     margin-top: 0.8em;
     color: #999;
-    padding-left: 5px;
+    padding-left: 8px;
     border-left: solid 3px #999;
 }
 p.pages a:hover{
     color: #000;
     border-left: solid 4px #000;
+}
+section {
+  width: 700px;
+}
+.wrapper {
+  width: 1024px;
 }
