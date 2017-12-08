@@ -1,9 +1,3 @@
----
-layout: page
-title: Install guide / Инструкция по установке
-permalink: /
----
-
 ###### RU
 
 1. Скачайте и установите pyRevit http://eirannejad.github.io/pyRevit/ (на время установки необходимо подключение к интернету)
