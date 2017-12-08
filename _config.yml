@@ -1,4 +1,6 @@
 theme: jekyll-theme-minimal
 
+url: https://apex-project.github.io/pyApex/
+
 plugins:
   - jemoji
