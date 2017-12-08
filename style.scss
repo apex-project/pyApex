@@ -14,15 +14,20 @@
 /**************/
 /* BASE RULES */
 /**************/
+html, body {
+  height: 100%;
+}
 
 html {
   font-size: 100%;
 }
 
 body {
-	background: $white;
+  background: $white;
   font: 18px/1.4 $ptsans;
   color: $darkGray;
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
@@ -308,3 +313,7 @@ h6 {
 // ... Otherwise it really bloats up the top of the CSS file and makes it difficult to find the start
 @import "highlights";
 @import "svg-icons";
+
+#main {
+  flex: 1 0 auto;
+}
