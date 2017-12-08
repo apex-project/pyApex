@@ -1,3 +1,7 @@
 theme: jekyll-theme-minimal
+
 exclude:
-  - _config.yml
+  - assets
+  
+plugins:
+  - jemoji
