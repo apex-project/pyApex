@@ -1,3 +1,9 @@
+---
+layout: page
+permalink: /help/
+title: Features and help
+---
+
 # 1. Selection
 
 ## Open Views
