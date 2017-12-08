@@ -27,7 +27,7 @@ h2,h3,h4,h5,h6 {
 body {
   font-size: 1.1em;
 }
-p.posts a{
+p.pages a{
     text-decoration: underline;
   display: block;
     margin-top: 0.3em;
@@ -35,7 +35,7 @@ p.posts a{
     padding-left: 5px;
     border-left: solid 4px #999;
 }
-p.posts a:hover{
+p.pages a:hover{
     color: #000;
     border-left: solid 4px #000;
 }
