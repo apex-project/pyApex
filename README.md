@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Install
-permalink: 
+permalink: /
 ---
 # Install guide / Инструкция по установке
 
