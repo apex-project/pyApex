@@ -17,7 +17,20 @@
       <header>
         <a href="{{ site.github.url }}"> <h1>{{ site.title | default: site.github.repository_name }}</h1> </a>
         <p>{{ site.description | default: site.github.project_tagline }}</p>
+       
+        <p class="pages">
+        {% for page in site.pages %}
+            <a href="https://apex-project.github.io/pyApex/{{ page.permalink }}">{{ page.title }}</a>
+        {% endfor %}
+        </p>
+      </header>
+      <section>
 
+      {{ content }}
+
+      </section>
+      <footer>
+        
         {% if site.github.is_project_page %}
           <p class="view"><a href="{{ site.github.repository_url }}">View the Project on GitHub <small>{{ github_name }}</small></a></p>
         {% endif %}
@@ -33,19 +46,6 @@
             <li><a href="{{ site.github.repository_url }}">View On <strong>GitHub</strong></a></li>
           </ul>
         {% endif %}
-        
-        <p class="pages">
-        {% for page in site.pages %}
-            <a href="https://apex-project.github.io/pyApex/{{ page.permalink }}">{{ page.title }}</a>
-        {% endfor %}
-        </p>
-      </header>
-      <section>
-
-      {{ content }}
-
-      </section>
-      <footer>
         {% if site.github.is_project_page %}
         <p>This project is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a></p>
         {% endif %}
