@@ -5,7 +5,8 @@ permalink: /help
 ---
 
 # Features and help
-## Selection
+
+## 1. Selection
 
 ### Open Views
 
