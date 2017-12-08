@@ -20,7 +20,7 @@
        
         <p class="pages">
         {% for page in site.pages %}
-            <a href="https://apex-project.github.io/pyApex/{{ page.permalink }}">{{ page.title }}</a>
+            <a href="{{ site.base-url }}{{ page.permalink }}">{{ page.title }}</a>
         {% endfor %}
         </p>
       </header>
@@ -66,6 +66,6 @@
         ga('send', 'pageview');
     </script>
   {% endif %}
-  <script src="https://apex-project.github.io/pyApex/assets/js/anchorize-jekyll-headings.js"></script>
+  <script src="{{ site.base-url }}/assets/js/anchorize-jekyll-headings.js"></script>
   </body>
 </html>
