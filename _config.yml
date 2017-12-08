@@ -1,7 +1,4 @@
 theme: jekyll-theme-minimal
 
-exclude:
-  - assets
-  
 plugins:
   - jemoji
