@@ -24,6 +24,7 @@ To save time for rendering each view, this button opens all selected views in on
 
 > Контекст: Должны быть выбраны несколько видов в браузере проекта
 
+---
 
 ### Extract IDs from text
 
@@ -51,16 +52,39 @@ Also works with one id per line inputs, e.g. with text copied from spreadsheets.
 
 Также работает с текстом, в котором каждая строка - отдельный ID, например скопированным из таблицы.
 
+---
 
 ### Zoom Base Point
+
+###### EN
+
+Zoom in active view to Project base point. If it's hidden - enables "Reveal Hidden" mode.
+
+> Shift+Click - find Shared Site point
+
+###### RU
+
+Находит базовую точку проекта на текущем виде. Если точка скрыта - включает режим показа скрытых объектов.
+
+> Shift+Click - найти Точку съемки
 
 ---
 
 ## 2. Model
 
-### Change Level
+### Remove Level
 
-remove selected level and transfer all its object to another selected level
+###### EN
+
+Remove selected level safely - transfer all dependent elements to another level. First select levels you want to remove, then select level where you want to move orphan elements.
+
+> No elements will be moved physically, only their Base level is being changed.
+
+###### RU
+
+Аккуратно удаляет выбранные уровни, перемещая все зависимые элементы, на другой уровень. Сначала выберите уровни, которые хотите удалить. Затем выберите уровень, к которому нужно привязать зависимые элементы.
+
+> Элементы остаются на своих местах, просто меняется из базовый уровень.
 
 ### Level Dependence
 
