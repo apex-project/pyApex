@@ -29,7 +29,28 @@ To save time for rendering each view, this button opens all selected views in on
 
 ###### EN
 
-Extracts all elements Ids from pasted text. Select elements by text pasted from Warnings Reports
+Extracts all elements Ids from pasted text. Useful to select elements from Warnings - just copy text from HTML report:
+
+Input:
+
+```
+Highlighted walls overlap. One of them may be ignored when Revit finds room boundaries. Use Cut Geometry to embed one wall within the other.	Walls : Basic Wall : EXT_M_CBL.250(I-INSpn.150-AIR.30-BRI.120)_550 : id 348661 
+Walls : Basic Wall : EXT_M_CBL.250(I-INSpn.150-AIR.30-BRI.120)_550 : id 348663
+```
+
+Output:
+```
+348661,348663
+```
+
+Also works with one id per line inputs, e.g. with text copied from spreadsheets.
+
+###### RU
+
+Извлекает ID элементов из вставленного текста. Полезно для выбора элементов из отчетов о предупреждениях - просто скопируйте текст из HTML-отчета.
+
+Также работает с текстом, в котором каждая строка - отдельный ID, например скопированным из таблицы.
+
 
 ### Zoom Base Point
 
