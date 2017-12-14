@@ -1,28 +1,35 @@
-import os.path
-from pprint import pprint
-import time
-import itertools
+# -*- coding: utf-8 -*-
+__title__ = 'Zoom Base Point'
+__doc__ = """Zoom in active view to Project base point. If it's hidden - enables "Reveal Hidden" mode.
+Shift+Click - to Site point
 
-from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, ViewType, ElementCategoryFilter
-from Autodesk.Revit.UI import TaskDialog,TaskDialogCommonButtons
-from Autodesk.Revit.UI.Selection import ISelectionFilter, ObjectType
-from Autodesk.Revit.DB import BuiltInCategory, ElementId, XYZ, ElementTransformUtils
-from System.Collections.Generic import List
-from Autodesk.Revit.DB import Transaction, TransactionGroup
+Находит базовую точку проекта на текущем виде. Если точка скрыта - включает режим показа скрытых объектов.
+Shift+Click - Точку съемки"""
+
+__helpurl__ = "https://apex-project.github.io/pyApex/help#zoom-base-point"
+
+
+import os.path
+from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, ElementId, Transaction
 
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
-doc_info = doc.ProjectInformation
-ppath = doc.PathName
-pfilename = os.path.splitext(os.path.split(ppath)[1])[0]
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-#dir_path = os.path.dirname(ppath)
+cl = FilteredElementCollector(doc, uidoc.ActiveView.Id).WhereElementIsNotElementType()
 
+if __shiftclick__:
+    category = BuiltInCategory.OST_SharedBasePoint
+else:
+    category = BuiltInCategory.OST_ProjectBasePoint
 
+elements = cl.OfCategory(category).ToElementIds()
 
-cl_all = FilteredElementCollector(doc).WhereElementIsNotElementType()
-# basepoint2 = ElementCategoryFilter(BuiltInCategory.OST_ProjectBasePoint, True)
-basepoint = cl_all.OfCategory(BuiltInCategory.OST_ProjectBasePoint).ToElementIds()
+if len(elements)==0:
+    t = Transaction(doc, "[%s] Reveal hidden" % __title__)
+    t.Start()
+    uidoc.ActiveView.EnableRevealHiddenMode()
+    t.Commit()
+    cl = FilteredElementCollector(doc).WhereElementIsNotElementType()
+    elements = cl.OfCategory(category).ToElementIds()
 
-uidoc.ShowElements(basepoint[0])
+uidoc.ShowElements(elements[0])
