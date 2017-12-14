@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-__doc__ = 'Move all elements based on specified level onto another level'
-import csv
-import os
-from Autodesk.Revit.DB import *
-from Autodesk.Revit.DB.Architecture import *
-from Autodesk.Revit.UI import TaskDialog
-from Autodesk.Revit.UI.Selection import ISelectionFilter, ObjectType
-from System.Collections.Generic import List
-from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
-from scriptutils import this_script
-from revitutils import doc, selection, uidoc
+__title__ = 'Remove Level Safely'
+__doc__ = """Move all elements based on specified level onto another level"""
 
+__helpurl__ = "https://apex-project.github.io/pyApex/help#remove-level"
+
+from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, Transaction
+from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+from pyrevit import script, revit
+from pyrevit.revit import doc
+
+output = script.get_output()
+logger = script.get_logger()
 
 class CheckBoxLevel:
     def __init__(self, level, default_state=False):
@@ -119,11 +119,11 @@ def main():
         changed = changed.union(set(changed_))
 
     if errors:
-        print("Errors")
-        print( ",".join(list(errors)))
+        logger.error("Errors")
+        logger.error( ",".join(list(errors)))
 
     if changed:
-        print("\nChanged")
+        print("\nChanged succesfully")
         print( ",".join(list(changed)))
 
 main()
