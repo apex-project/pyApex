@@ -1,23 +1,30 @@
-# -*- coding: utf-8 -*- 
-__doc__ = 'Unjoin selected elements'
+# -*- coding: utf-8 -*-
+__title__ = 'Unjoin many'
+__doc__ = """"""
 
-from scriptutils import logger
-import os
-import re
-import os.path as op
-import pickle as pl
-import clr
+__helpurl__ = "https://apex-project.github.io/pyApex/help#unjoin-many"
+
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+
+pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+
+if pyRevitNewer44:
+    from pyrevit.revit import doc, selection
+
+else:
+    from revitutils import doc, selection
+
 
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, JoinGeometryUtils, Transaction
-
-from System.Collections.Generic import List
 from Autodesk.Revit.UI import TaskDialog,TaskDialogCommonButtons
 
-uidoc = __revit__.ActiveUIDocument
-doc = __revit__.ActiveUIDocument.Document
-selection = uidoc.Selection.GetElementIds()
+selected_ids = selection.element_ids
 
-rng = range(len(selection))
+rng = range(len(selected_ids))
 checked_pairs = []
 joined_pairs = []
 c = 0
@@ -32,8 +39,8 @@ for x in rng:
             continue
 
         checked_pairs.append(_t)
-        eid1 = selection[_p[0]]
-        eid2 = selection[_p[1]]
+        eid1 = selected_ids[_p[0]]
+        eid2 = selected_ids[_p[1]]
         e1,e2 = doc.GetElement(eid1),doc.GetElement(eid2)
         joined = JoinGeometryUtils.AreElementsJoined(doc,e1,e2)
         if joined:
@@ -41,11 +48,12 @@ for x in rng:
 
 if len(joined_pairs) > 0:
     t = Transaction(doc)
-    t.Start("UnjoinSelected")
+    t.Start(__title__)
     for p in joined_pairs:
         JoinGeometryUtils.UnjoinGeometry(doc,p[0],p[1])
         c+=1
     t.Commit()
-TaskDialog.Show("R","%d пар элементов разъединены" % c)
+
+TaskDialog.Show(__title__,"%d pairs of elements unjoined" % c)
 
 
