@@ -4,15 +4,25 @@ __doc__ = 'List elements dependent of selected level\nYou can select plan view t
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#level-dependencies"
 
-from Autodesk.Revit.DB import *
-from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
-from pyrevit import script, revit
-from pyrevit.revit import doc, uidoc
+from pyrevit.versionmgr import PYREVIT_VERSION
+pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
-output = script.get_output()
-logger = script.get_logger()
-selection = revit.get_selection()
+if pyRevitNewer44:
+    from pyrevit import script, revit, DB
+    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+    output = script.get_output()
+    logger = script.get_logger()
+    linkify = output.linkify
+    selection = revit.get_selection()
 
+    doc = revit.doc
+else:
+    from scriptutils import logger
+    from Autodesk.Revit import DB
+    from scriptutils.userinput import CommandSwitchWindow
+    uidoc = __revit__.ActiveUIDocument
+    doc = uidoc.Document
+    selection = uidoc.Selection.GetElements()
 
 ignore_types = [Level,SunAndShadowSettings,Viewport,SketchPlane, Sketch]
 

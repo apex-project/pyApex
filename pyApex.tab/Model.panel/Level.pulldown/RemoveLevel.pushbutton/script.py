@@ -4,8 +4,25 @@ __doc__ = """Move all elements based on specified level onto another level"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#remove-level"
 
-from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, Transaction
-from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+from pyrevit.versionmgr import PYREVIT_VERSION
+pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+
+if pyRevitNewer44:
+    from pyrevit import script, revit, DB
+    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+    output = script.get_output()
+    logger = script.get_logger()
+    linkify = output.linkify
+    selection = revit.get_selection()
+
+    doc = revit.doc
+else:
+    from scriptutils import logger
+    from Autodesk.Revit import DB
+    from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
+    from revitutils import doc, selection, uidoc
+
+
 from pyrevit import script, revit
 from pyrevit.revit import doc
 

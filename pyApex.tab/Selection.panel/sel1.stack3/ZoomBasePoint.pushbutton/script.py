@@ -8,12 +8,25 @@ Shift+Click - Точку съемки"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#zoom-base-point"
 
+from pyrevit.versionmgr import PYREVIT_VERSION
+pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
-import os.path
+if pyRevitNewer44:
+    from pyrevit import script, revit
+    output = script.get_output()
+    logger = script.get_logger()
+    linkify = output.linkify
+    doc = revit.doc
+    uidoc = revit.uidoc
+    selection = revit.get_selection()
+else:
+    from scriptutils import logger, this_script
+
+    uidoc = __revit__.ActiveUIDocument
+    doc = uidoc.Document
+    output = this_script.output
+
 from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, ElementId, Transaction
-
-uidoc = __revit__.ActiveUIDocument
-doc = __revit__.ActiveUIDocument.Document
 
 cl = FilteredElementCollector(doc, uidoc.ActiveView.Id).WhereElementIsNotElementType()
 
@@ -27,9 +40,15 @@ elements = cl.OfCategory(category).ToElementIds()
 if len(elements)==0:
     t = Transaction(doc, "[%s] Reveal hidden" % __title__)
     t.Start()
+
     uidoc.ActiveView.EnableRevealHiddenMode()
-    t.Commit()
-    cl = FilteredElementCollector(doc).WhereElementIsNotElementType()
+    cl = FilteredElementCollector(doc, uidoc.ActiveView.Id).WhereElementIsNotElementType()
     elements = cl.OfCategory(category).ToElementIds()
+    if len(elements) == 0:
+        t.RollBack()
+        cl = FilteredElementCollector(doc).WhereElementIsNotElementType()
+        elements = cl.OfCategory(category).ToElementIds()
+    else:
+        t.Commit()
 
 uidoc.ShowElements(elements[0])

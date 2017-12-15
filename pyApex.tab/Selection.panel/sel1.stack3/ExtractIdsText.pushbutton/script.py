@@ -8,6 +8,25 @@ Also works with one id per line inputs, e.g. with text copied from spreadsheets.
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#extract-ids-from-text"
 
+from pyrevit.versionmgr import PYREVIT_VERSION
+pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+
+if pyRevitNewer44:
+    from pyrevit import script, revit
+    output = script.get_output()
+    logger = script.get_logger()
+    linkify = output.linkify
+    doc = revit.doc
+    selection = revit.get_selection()
+    datafile = script.get_document_data_file("SelList", "pym")
+else:
+    from scriptutils import logger, this_script
+
+    uidoc = __revit__.ActiveUIDocument
+    doc = uidoc.Document
+    output = this_script.output
+    datafile = this_script.get_document_data_file(0, "pym", command_name="SelList")
+
 import os
 import re
 import pickle as pl
@@ -15,22 +34,11 @@ import clr
 
 clr.AddReferenceByPartialName('System.Windows.Forms')
 clr.AddReferenceByPartialName('System.Drawing')
-from Autodesk.Revit.DB import ElementId
 from System.Windows.Forms import Application, Button, Form, Label, CheckBox, DialogResult, TextBox, RadioButton, \
     FormBorderStyle
 from System.Drawing import Point, Icon, Size
-from pyrevit import script, revit
+from Autodesk.Revit.DB import ElementId
 
-output = script.get_output()
-logger = script.get_logger()
-selection = revit.get_selection()
-
-linkify = output.linkify
-
-uidoc = __revit__.ActiveUIDocument
-doc = __revit__.ActiveUIDocument.Document
-
-datafile = script.get_document_data_file("SelList", "pym")
 
 
 def addtoclipboard(text):
@@ -93,9 +101,9 @@ def parse(value):
             errors.append("%d: %s" % (v, vl))
 
     if len(ids_element_ids) > 0:
-        logger.info('%d elements selected and copied to clipboard:')
-
+        print('%d elements selected and copied to clipboard:' % len(ids_element_ids))
         elements_strs = []
+
         for idx, elid in enumerate(ids_element_ids):
             elements_strs.append(output.linkify(elid))
         print(",".join(elements_strs))
@@ -104,6 +112,9 @@ def parse(value):
         addtoclipboard(",".join(set(ids_str)))
 
         # Select objects
+        if not pyRevitNewer44:
+            from System.Collections.Generic import List
+            ids_element_ids = List[ElementId](ids_element_ids)
         selection = uidoc.Selection
         selection.SetElementIds(ids_element_ids)
 
@@ -156,8 +167,8 @@ class pyRevitPlusForm(Form):
                 self.value = control.Text
 
         parse(self.value)
-        self.Close()
-
+        # self.Close()
+#
 
 def run_form():
     form = pyRevitPlusForm()
@@ -174,3 +185,4 @@ if err == False:
     output.set_width(400)
     output.set_height(400)
     run_form()
+    print("finish")

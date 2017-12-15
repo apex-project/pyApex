@@ -7,8 +7,15 @@ Context: Some views should be selected
 Контекст: Должны быть выбраны несколько видов в браузере проекта или на листе"""
 __context__ = 'Selection'
 
-from revitutils import doc, uidoc, selection
-from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, View
+from pyrevit.versionmgr import PYREVIT_VERSION
+pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+
+if pyRevitNewer44:
+	from pyrevit import revit
+	selection = revit.get_selection()
+else:
+	from revitutils import selection
+
 from Autodesk.Revit.UI import TaskDialog
 
 __helpurl__ = "https://github.com/apex-project/pyApex/wiki/Buttons#open-views"
