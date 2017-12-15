@@ -13,7 +13,7 @@ except:
 pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:
-    from pyrevit import script, revit, DB
+    from pyrevit import script, revit
     from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
     output = script.get_output()
     logger = script.get_logger()
@@ -23,16 +23,10 @@ if pyRevitNewer44:
     doc = revit.doc
 else:
     from scriptutils import logger
-    from Autodesk.Revit import DB
     from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
     from revitutils import doc, selection, uidoc
 
-
-from pyrevit import script, revit
-from pyrevit.revit import doc
-
-output = script.get_output()
-logger = script.get_logger()
+from Autodesk.Revit.DB import *
 
 class CheckBoxLevel:
     def __init__(self, level, default_state=False):
@@ -59,6 +53,10 @@ def LevelChangePreselected(selected_ids, target_level_id):
         el = doc.GetElement(e_id)
         try:
             levelID = el.LevelId  # Initial level of object, assigned on element creation
+
+            if levelID.IntegerValue < 0:
+                continue
+
             LevelToElement = doc.GetElement(levelID)
 
             LevElev = LevelToElement.get_Parameter(BuiltInParameter.LEVEL_ELEV).AsValueString().replace(" ", "")
@@ -122,7 +120,7 @@ def main():
     if not selected2:
         print("Nothing selected")
         return
-    print(selected2)
+
     selected_levels2 = [c.level for c in selected2]
     target_level = selected_levels2[0]
     errors = set()
@@ -147,5 +145,8 @@ def main():
     if changed:
         print("\nChanged succesfully")
         print( ",".join(list(changed)))
+    else:
+        logger.error("No object were changed")
+
 
 main()

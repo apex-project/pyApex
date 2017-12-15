@@ -27,9 +27,8 @@ if pyRevitNewer44:
     datafile = script.get_document_data_file("SelList", "pym")
 else:
     from scriptutils import logger, this_script
+    from revitutils import doc, uidoc
 
-    uidoc = __revit__.ActiveUIDocument
-    doc = uidoc.Document
     output = this_script.output
     datafile = this_script.get_document_data_file(0, "pym", command_name="SelList")
 

@@ -26,9 +26,8 @@ if pyRevitNewer44:
     selection = revit.get_selection()
 else:
     from scriptutils import logger, this_script
+    from revitutils import doc, selection, uidoc
 
-    uidoc = __revit__.ActiveUIDocument
-    doc = uidoc.Document
     output = this_script.output
 
 from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, ElementId, Transaction
