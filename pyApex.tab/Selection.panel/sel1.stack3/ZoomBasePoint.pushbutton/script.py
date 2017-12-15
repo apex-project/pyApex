@@ -8,7 +8,12 @@ Shift+Click - Точку съемки"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#zoom-base-point"
 
-from pyrevit.versionmgr import PYREVIT_VERSION
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+
 pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:
@@ -40,10 +45,13 @@ elements = cl.OfCategory(category).ToElementIds()
 if len(elements)==0:
     t = Transaction(doc, "[%s] Reveal hidden" % __title__)
     t.Start()
+    try:
+        uidoc.ActiveView.EnableRevealHiddenMode()
+        cl = FilteredElementCollector(doc, uidoc.ActiveView.Id).WhereElementIsNotElementType()
+        elements = cl.OfCategory(category).ToElementIds()
+    except:
+        elements = []
 
-    uidoc.ActiveView.EnableRevealHiddenMode()
-    cl = FilteredElementCollector(doc, uidoc.ActiveView.Id).WhereElementIsNotElementType()
-    elements = cl.OfCategory(category).ToElementIds()
     if len(elements) == 0:
         t.RollBack()
         cl = FilteredElementCollector(doc).WhereElementIsNotElementType()

@@ -4,7 +4,12 @@ __doc__ = """Move all elements based on specified level onto another level"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#remove-level"
 
-from pyrevit.versionmgr import PYREVIT_VERSION
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+
 pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:

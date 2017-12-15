@@ -8,7 +8,12 @@ Also works with one id per line inputs, e.g. with text copied from spreadsheets.
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#extract-ids-from-text"
 
-from pyrevit.versionmgr import PYREVIT_VERSION
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+
 pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:
@@ -17,6 +22,7 @@ if pyRevitNewer44:
     logger = script.get_logger()
     linkify = output.linkify
     doc = revit.doc
+    uidoc = revit.uidoc
     selection = revit.get_selection()
     datafile = script.get_document_data_file("SelList", "pym")
 else:
@@ -37,6 +43,7 @@ clr.AddReferenceByPartialName('System.Drawing')
 from System.Windows.Forms import Application, Button, Form, Label, CheckBox, DialogResult, TextBox, RadioButton, \
     FormBorderStyle
 from System.Drawing import Point, Icon, Size
+from System.Collections.Generic import List
 from Autodesk.Revit.DB import ElementId
 
 
@@ -112,11 +119,9 @@ def parse(value):
         addtoclipboard(",".join(set(ids_str)))
 
         # Select objects
-        if not pyRevitNewer44:
-            from System.Collections.Generic import List
-            ids_element_ids = List[ElementId](ids_element_ids)
+        ids_element_ids_list = List[ElementId](ids_element_ids)
         selection = uidoc.Selection
-        selection.SetElementIds(ids_element_ids)
+        selection.SetElementIds(ids_element_ids_list)
 
         # Save selection
         try:

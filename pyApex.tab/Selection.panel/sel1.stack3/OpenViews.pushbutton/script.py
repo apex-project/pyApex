@@ -7,34 +7,38 @@ Context: Some views should be selected
 Контекст: Должны быть выбраны несколько видов в браузере проекта или на листе"""
 __context__ = 'Selection'
 
-from pyrevit.versionmgr import PYREVIT_VERSION
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+
 pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:
-	from pyrevit import revit
-	selection = revit.get_selection()
+    from pyrevit import revit
+    selection = revit.get_selection()
 else:
-	from revitutils import selection
+    from revitutils import selection
 
 from Autodesk.Revit.UI import TaskDialog
 
 __helpurl__ = "https://github.com/apex-project/pyApex/wiki/Buttons#open-views"
-
 
 sel = selection.elements
 sel_count = len(sel)
 
 errors = 0
 for v in sel:
-	try:
-		uidoc.ActiveView = v
-	except:
-		errors += 1
+    try:
+        uidoc.ActiveView = v
+    except:
+        errors += 1
 
 # Show message if error occured or nothing selected
 if sel_count == 0:
-	TaskDialog.Show(__title__, "Select views to open")
+    TaskDialog.Show(__title__, "Select views to open")
 elif errors == sel_count:
-	TaskDialog.Show(__title__, "Unable to open selected views")
+    TaskDialog.Show(__title__, "Unable to open selected views")
 elif errors != 0:
-	TaskDialog.Show(__title__, "%d of %d selected views were opened" % (sel_count - errors, sel_count))
+    TaskDialog.Show(__title__, "%d of %d selected views were opened" % (sel_count - errors, sel_count))
