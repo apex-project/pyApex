@@ -1,24 +1,39 @@
-# -*- coding: utf-8 -*-
-try:
-    from pyrevit.versionmgr import PYREVIT_VERSION
-except:
-    from pyrevit import versionmgr
-    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
-
-pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
-
-# if pyRevitNewer44:
-#     from pyrevit import script, revit
-#     output = script.get_output()
-#     logger = script.get_logger()
-#     linkify = output.linkify
-#     selection = revit.get_selection()
-#     uidoc = revit.uidoc
-#     doc = revit.doc
-# else:
-#     from scriptutils import logger, this_script
-#     from revitutils import doc, selection, uidoc
-#     output = this_script.output
+from scriptutils import this_script
+from scriptutils.userinput import WPFWindow
 
 
-print("Config")
+my_config = this_script.config
+
+
+class LevelDependenceConfigWindow(WPFWindow):
+    def __init__(self, xaml_file_name):
+        WPFWindow.__init__(self, xaml_file_name)
+
+        try:
+            self.exceptions.Text = str(my_config.exceptions)
+            self.limit.Text = str(my_config.limit)
+        except:
+            self.exceptions.Text = my_config.exceptions = ""
+            self.limit.Text = my_config.limit = "50"
+
+            this_script.save_config()
+
+    # noinspection PyUnusedLocal
+    # noinspection PyMethodMayBeStatic
+    def save_options(self, sender, args):
+        my_config.exceptions = self.exceptions.Text
+        my_config.limit = self.limit.Text
+
+        this_script.save_config()
+        self.Close()
+
+
+    def NumberValidationTextBox(self, sender, e):
+        try:
+            x = int(e.Text.strip())
+            e.Handled = False
+        except:
+            e.Handled = True
+
+if __name__ == '__main__':
+    LevelDependenceConfigWindow('LevelDependenceConfig.xaml').ShowDialog()
