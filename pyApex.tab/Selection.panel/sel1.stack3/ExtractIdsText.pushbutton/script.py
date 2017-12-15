@@ -107,15 +107,15 @@ def parse(value):
             errors.append("%d: %s" % (v, vl))
 
     if len(ids_element_ids) > 0:
-        print('%d elements selected and copied to clipboard:' % len(ids_element_ids))
+        print('%d elements selected:' % len(ids_element_ids))
         elements_strs = []
 
         for idx, elid in enumerate(ids_element_ids):
             elements_strs.append(output.linkify(elid))
         print(",".join(elements_strs))
 
-        # Copy ids to clipboard
-        addtoclipboard(",".join(set(ids_str)))
+        # # Copy ids to clipboard
+        # addtoclipboard(",".join(set(ids_str)))
 
         # Select objects
         ids_element_ids_list = List[ElementId](ids_element_ids)

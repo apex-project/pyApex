@@ -14,17 +14,18 @@ pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:
     from pyrevit import script, revit
-    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+    from pyrevit.revit import uidoc, doc
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
     selection = revit.get_selection()
-    uidoc = revit.uidoc
-    doc = revit.doc
+
 else:
-    from scriptutils import logger
-    from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
+    from scriptutils import logger, this_script as script
     from revitutils import doc, selection, uidoc
+    output = script.output
+
+my_config = script.config
 
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
@@ -144,7 +145,11 @@ else:
         elements_count = len(element_ids)
 
         for key, ids in result_dict.items():
-            print('{} - {}:'.format( key, output.linkify(ids, title=len(ids) ) ) )
+            if pyRevitNewer44:
+                print('{} - {}:'.format( key, output.linkify(ids, title=len(ids) ) ) )
+            else:
+                print('{} - {}:'.format(key, len(ids) ))
+
             print(','.join(
                 map(lambda x: output.linkify(x), ids)
             ))
@@ -156,8 +161,12 @@ else:
         if ignored > 0:
             print("%d elements ignored" % ignored)
 
-        print('{}'.format(output.linkify(element_ids,
+        if pyRevitNewer44:
+            print('{}'.format(output.linkify(element_ids,
                                          title='%d elements on level %s' % (elements_count, e.Name))))
+        else:
+            print('%d elements on level %s' % (elements_count, e.Name))
+
         element_ids_str = map(lambda x: str(x.IntegerValue), element_ids)
         print("\n\t"  + ",".join(element_ids_str))
         print("\n\n\n")

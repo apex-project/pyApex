@@ -18,13 +18,12 @@ if pyRevitNewer44:
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
-    selection = revit.get_selection()
-
     doc = revit.doc
+
 else:
     from scriptutils import logger
     from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
-    from revitutils import doc, selection, uidoc
+    from revitutils import doc
 
 from Autodesk.Revit.DB import *
 
