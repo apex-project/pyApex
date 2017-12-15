@@ -18,8 +18,9 @@ pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 if pyRevitNewer44:
     from pyrevit import revit
     selection = revit.get_selection()
+    uidoc = revit.uidoc
 else:
-    from revitutils import selection
+    from revitutils import selection, uidoc
 
 from Autodesk.Revit.UI import TaskDialog
 
