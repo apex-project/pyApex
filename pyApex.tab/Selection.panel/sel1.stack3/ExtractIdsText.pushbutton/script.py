@@ -65,7 +65,7 @@ def strip(value):
         return
 
 
-def parse(value):
+def parse(value, reduce_duplicates = False):
     value = strip(value)
 
     if not value:
@@ -75,8 +75,9 @@ def parse(value):
     value_lines = value.split("\n")
 
     errors = []
-    ids_str = set()
-    ids_element_ids = set()
+
+    ids_str = []
+    ids_element_ids = []
 
     for v in range(len(value_lines)):
         vl = value_lines[v]
@@ -101,14 +102,18 @@ def parse(value):
 
         if _id:
             e_id = ElementId(_id)
-            ids_element_ids.add(e_id)
-            ids_str.add(str(_id))
+            ids_element_ids.append(e_id)
+            ids_str.append(str(_id))
         else:
             errors.append("%d: %s" % (v, vl))
 
     if len(ids_element_ids) > 0:
         print('%d elements selected:' % len(ids_element_ids))
         elements_strs = []
+
+        if reduce_duplicates:
+            ids_element_ids = set(ids_element_ids)
+            ids_str = set(ids_str)
 
         for idx, elid in enumerate(ids_element_ids):
             elements_strs.append(output.linkify(elid))
@@ -137,56 +142,31 @@ def parse(value):
         logger.error("Ids weren't found on lines: \n" + "\n".join(errors))
 
 
+from scriptutils import this_script
+from scriptutils.userinput import WPFWindow
 
-class pyRevitPlusForm(Form):
-    global parse
+my_config = this_script.config
 
-    def __init__(self):
-        self.Text = __title__
-        textbox = TextBox()
-        textbox.Location = Point(0, 0)
-        textbox.Text = "Please input reports text or any list of IDs to select elements"
-        textbox.AutoSize = False
-        textbox.Size = Size(400, 200)
-        textbox.Multiline = True
-        textbox.Name = 'value'
-        self.Controls.Add(textbox)
+class ExtractIdsTextWindow(WPFWindow):
+    def __init__(self, xaml_file_name):
+        WPFWindow.__init__(self, xaml_file_name)
 
-        button_update = Button()
-        button_update.Text = "Select"
-        button_x = 8
-        button_y = 200
-        button_update.Location = Point(button_x, button_y)
-        button_update.Click += self.form_update
-        self.Controls.Add(button_update)
-        self.Height = button_y + 70
-        self.Width = 400
-        self.MaximizeBox = False
-        self.MinimizeBox = False
-        self.FormBorderStyle = FormBorderStyle.FixedDialog
+        self.text.Text = "Paste text from warnings report or any text you want to extract IDs from"
 
-    def form_update(self, sender, event):
-        for control in self.Controls:
-            if control.Name == 'value':
-                self.value = control.Text
+        try:
+            self.reduce_duplicates.IsChecked = my_config.reduce_duplicates
+        except:
+            self.reduce_duplicates.IsChecked = my_config.reduce_duplicates = False
 
-        parse(self.value)
-        # self.Close()
-#
+    # noinspection PyUnusedLocal
+    # noinspection PyMethodMayBeStatic
+    def send(self, sender, args):
+        my_config.reduce_duplicates = self.reduce_duplicates.IsChecked
+        this_script.save_config()
+        parse(self.text.Text, reduce_duplicates = self.reduce_duplicates.IsChecked)
+        self.Close()
 
-def run_form():
-    form = pyRevitPlusForm()
-    Application.Run(form)
-
-
-# searching for already opened forms
-err = False
-for f in Application.OpenForms:
-    if (f.Text == __title__):
-        f.Activate()
-        err = True
-if err == False:
+if __name__ == '__main__':
+    ExtractIdsTextWindow('window.xaml').ShowDialog()
     output.set_width(400)
     output.set_height(400)
-    run_form()
-    print("finish")
