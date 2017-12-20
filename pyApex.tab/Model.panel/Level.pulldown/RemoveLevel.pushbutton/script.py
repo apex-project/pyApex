@@ -88,8 +88,8 @@ def LevelChangePreselected(selected_ids, target_level_id):
     return errors, changed
 
 def main():
-    cl_sheets = FilteredElementCollector(doc)
-    levels_all = cl_sheets.OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().ToElements()
+    cl = FilteredElementCollector(doc)
+    levels_all = cl.OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().ToElements()
 
     options = []
     for l in levels_all:
@@ -99,23 +99,23 @@ def main():
     if len(options) == 0:
         print("Levels wasn't found")
         return
+
     selected1 = SelectFromCheckBoxes.show(options, title='Select levels to delete', width=300,
                                                button_name='OK')
+    selected_levels1 = [c.level for c in selected1 if c.state == True]
 
-    if not selected1:
+    if not selected_levels1:
         print("Nothing selected")
         return
 
-    selected_levels1 = [c.level for c in selected1 if c.state == True]
     options = [c for c in selected1 if c.state != True]
-    # print(selected_levels1)
-    selected2 = SelectFromList.show(options, title='Select target level', width=300,
-                                          button_name='OK')
 
     if len(options) == 0:
         print("You selected all levels")
         return
 
+    selected2 = SelectFromList.show(options, title='Select target level', width=300,
+                                          button_name='OK')
     if not selected2:
         print("Nothing selected")
         return
