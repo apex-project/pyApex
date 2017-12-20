@@ -3,6 +3,7 @@ __title__ = 'Remove Level Safely'
 __doc__ = """Move all elements based on specified level onto another level"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#remove-level"
+__beta__ = True
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
@@ -52,7 +53,6 @@ def LevelChangePreselected(selected_ids, target_level_id):
         el = doc.GetElement(e_id)
         try:
             levelID = el.LevelId  # Initial level of object, assigned on element creation
-
             if levelID.IntegerValue < 0:
                 continue
 
@@ -68,14 +68,22 @@ def LevelChangePreselected(selected_ids, target_level_id):
             if not offset:
                 offset = el.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET)
 
+            if not offset:
+                offset = el.get_Parameter(BuiltInParameter.ROOM_LOWER_OFFSET)
+                
+            print(offset.AsValueString())
             finalElev = float(LevElev) + float(offset.AsValueString().replace(" ", ""))
+            print(offset.AsValueString(), finalElev)
             offset.SetValueString(str(finalElev))
 
             baselevel = el.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM)
             if not baselevel:
                 baselevel = el.get_Parameter(BuiltInParameter.WALL_BASE_CONSTRAINT)
-
+                # if baselevel:
+                #     baseoffset = el.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET)
+                #     finalOffset = float(LevElev) + float(offset.AsValueString().replace(" ", ""))
             baselevel.Set(target_level_id)
+
             changed.append(str(e_id.IntegerValue))
         except Exception as e:
             try:

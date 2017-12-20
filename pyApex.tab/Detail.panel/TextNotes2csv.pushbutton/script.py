@@ -1,9 +1,12 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 __doc__ = 'List all text notes on placed views\nto csv D:\\textnotes...'
 import csv
 import os
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB.Architecture import *
+from scriptutils.userinput import WPFWindow, pick_folder
+
+
 uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 
@@ -57,7 +60,7 @@ else:
             #     # print(e.Text,e.Id)
             #     if e.Text not in unique:
             #         unique.append(e.Text)
-                    
+
         # break
         # print('{2} NUMBER: {0}   NAME:{1}'.format(name.rjust(10),
         #                                       s.LookupParameter('Имя листа').AsString().ljust(50),
@@ -81,7 +84,7 @@ else:
             for v in r:
                 # print(v)
                 # try:
-                    
+
                 #     vv = v
                 #     'encoding error'
                 # except:

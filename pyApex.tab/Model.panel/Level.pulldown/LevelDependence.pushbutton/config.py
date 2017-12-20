@@ -9,11 +9,11 @@ pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 if pyRevitNewer44:
     from pyrevit import script
+    my_config = script.get_config()
 else:
     from scriptutils import this_script as script
     from scriptutils.userinput import WPFWindow
-
-my_config = script.config
+    my_config = script.config
 
 class LevelDependenceConfigWindow(WPFWindow):
     def __init__(self, xaml_file_name):

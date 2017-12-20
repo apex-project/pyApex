@@ -20,12 +20,13 @@ if pyRevitNewer44:
     logger = script.get_logger()
     linkify = output.linkify
     selection = revit.get_selection()
-
+    my_config = script.get_config()
 else:
     from scriptutils import logger, this_script as script
     from revitutils import doc, selection, uidoc
     from scriptutils.userinput import SelectFromCheckBoxes
     output = script.output
+    my_config = script.config
 
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
@@ -33,7 +34,7 @@ from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 
 def get_config_exceptions():
     try:
-        conf =  script.config.exceptions
+        conf = my_config.exceptions
 
     except:
         import os
@@ -45,7 +46,7 @@ def get_config_exceptions():
         except:
             exceptions = []
 
-        script.config.exceptions = conf
+        my_config.exceptions = conf
         script.save_config()
 
     if conf:
@@ -56,7 +57,7 @@ def get_config_exceptions():
 
 def get_config_limit():
     try:
-        conf =  int(script.config.limit)
+        conf = int(my_config.limit)
     except:
         conf = 50
         script.config.limit = conf
@@ -80,19 +81,17 @@ class CheckBoxLevel:
     def __bool__(self):
         return self.state
 
-
-def select_levels_dialog():
+def all_levels():
     cl = FilteredElementCollector(doc)
     levels_all = cl.OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().ToElements()
+    return levels_all
 
+def select_levels_dialog(levels_all):
     options = []
+
     for l in levels_all:
         cb = CheckBoxLevel(l)
         options.append(cb)
-
-    if len(options) == 0:
-        print("Levels wasn't found")
-        return
 
     selected = SelectFromCheckBoxes.show(options, title='Select level to check', width=300,
                                                button_name='Select')
@@ -150,10 +149,16 @@ def starting_view():
 def main():
     ignore_types = get_config_exceptions()
     limit = get_config_limit()
+
+    levels_all = all_levels()
+    if len(levels_all) < 2:
+        print("At least 2 levels should be created in a project to check dependencies. Create one more level and run again")
+        return
+
     selected_levels = get_levels_from_selection(selection.elements)
 
     if len(selected_levels) == 0:
-        selected_levels = select_levels_dialog()
+        selected_levels = select_levels_dialog(levels_all)
         if not selected_levels:
             print("Nothing selected")
             return
@@ -229,7 +234,7 @@ def main():
             ))
             print('\n\n')
 
-        if i == limit:
+        if i == limit and elements_count - limit > 0:
             print("+ %d more elements ..." % (elements_count - limit))
 
         if ignored > 0:
