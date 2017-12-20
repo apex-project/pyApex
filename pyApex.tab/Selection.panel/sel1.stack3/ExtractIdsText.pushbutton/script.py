@@ -37,11 +37,6 @@ import re
 import pickle as pl
 import clr
 
-clr.AddReferenceByPartialName('System.Windows.Forms')
-clr.AddReferenceByPartialName('System.Drawing')
-from System.Windows.Forms import Application, Button, Form, Label, CheckBox, DialogResult, TextBox, RadioButton, \
-    FormBorderStyle
-from System.Drawing import Point, Icon, Size
 from System.Collections.Generic import List
 from Autodesk.Revit.DB import ElementId
 
@@ -165,6 +160,7 @@ class ExtractIdsTextWindow(WPFWindow):
         this_script.save_config()
         parse(self.text.Text, reduce_duplicates = self.reduce_duplicates.IsChecked)
         self.Close()
+
 
 if __name__ == '__main__':
     ExtractIdsTextWindow('window.xaml').ShowDialog()

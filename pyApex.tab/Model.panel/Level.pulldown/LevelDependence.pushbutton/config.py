@@ -1,22 +1,34 @@
-from scriptutils import this_script
-from scriptutils.userinput import WPFWindow
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+except:
+    from pyrevit import versionmgr
 
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
-my_config = this_script.config
+pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
+if pyRevitNewer44:
+    from pyrevit import script
+else:
+    from scriptutils import this_script as script
+    from scriptutils.userinput import WPFWindow
+
+my_config = script.config
 
 class LevelDependenceConfigWindow(WPFWindow):
     def __init__(self, xaml_file_name):
         WPFWindow.__init__(self, xaml_file_name)
 
         try:
-            self.exceptions.Text = str(my_config.exceptions)
             self.limit.Text = str(my_config.limit)
         except:
-            self.exceptions.Text = my_config.exceptions = ""
             self.limit.Text = my_config.limit = "50"
 
-            this_script.save_config()
+        try:
+            self.exceptions.Text = str(my_config.exceptions)
+        except:
+
+            script.save_config()
 
     # noinspection PyUnusedLocal
     # noinspection PyMethodMayBeStatic
@@ -24,7 +36,7 @@ class LevelDependenceConfigWindow(WPFWindow):
         my_config.exceptions = self.exceptions.Text
         my_config.limit = self.limit.Text
 
-        this_script.save_config()
+        script.save_config()
         self.Close()
 
 

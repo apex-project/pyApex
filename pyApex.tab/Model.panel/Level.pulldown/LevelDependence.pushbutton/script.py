@@ -15,6 +15,7 @@ pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 if pyRevitNewer44:
     from pyrevit import script, revit
     from pyrevit.revit import uidoc, doc
+    from pyrevit.forms import SelectFromCheckBoxes
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
@@ -23,13 +24,82 @@ if pyRevitNewer44:
 else:
     from scriptutils import logger, this_script as script
     from revitutils import doc, selection, uidoc
+    from scriptutils.userinput import SelectFromCheckBoxes
     output = script.output
-
-my_config = script.config
 
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
-ignore_types = [Level, SunAndShadowSettings, Viewport, SketchPlane, Sketch]
+
+
+def get_config_exceptions():
+    try:
+        conf =  script.config.exceptions
+
+    except:
+        import os
+        config_default_path = os.path.join( os.path.dirname(os.path.realpath(__file__)), \
+            "ignore_types_default.txt" )
+        try:
+            with open(config_default_path) as f:
+                conf = f.readline()
+        except:
+            exceptions = []
+
+        script.config.exceptions = conf
+        script.save_config()
+
+    if conf:
+        exceptions = conf.split(",")
+        exceptions = map(lambda x: x.strip(), exceptions)
+        return exceptions
+
+
+def get_config_limit():
+    try:
+        conf =  int(script.config.limit)
+    except:
+        conf = 50
+        script.config.limit = conf
+        script.save_config()
+
+    return conf
+
+
+class CheckBoxLevel:
+    def __init__(self, level, default_state=False):
+        self.level = level
+        self.name = level.Name
+        self.state = default_state
+
+    def __str__(self):
+        return self.name
+
+    def __nonzero__(self):
+        return self.state
+
+    def __bool__(self):
+        return self.state
+
+
+def select_levels_dialog():
+    cl = FilteredElementCollector(doc)
+    levels_all = cl.OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().ToElements()
+
+    options = []
+    for l in levels_all:
+        cb = CheckBoxLevel(l)
+        options.append(cb)
+
+    if len(options) == 0:
+        print("Levels wasn't found")
+        return
+
+    selected = SelectFromCheckBoxes.show(options, title='Select level to check', width=300,
+                                               button_name='Select')
+    if not selected:
+        return
+
+    return [c.level for c in selected if c.state == True]
 
 
 #filter
@@ -77,16 +147,17 @@ def starting_view():
     return startingView
 
 
-selected_levels = get_levels_from_selection(selection.elements)
+def main():
+    ignore_types = get_config_exceptions()
+    limit = get_config_limit()
+    selected_levels = get_levels_from_selection(selection.elements)
 
-limit = 50
+    if len(selected_levels) == 0:
+        selected_levels = select_levels_dialog()
+        if not selected_levels:
+            print("Nothing selected")
+            return
 
-if len(selected_levels) == 0:
-    logger.error('Please, select level or plan view')
-else:
-    opened_view_ids = uidoc.GetOpenUIViews()
-
-    result_dict = {}
     for e in selected_levels:
         views_to_close = check_dependent_views(e)
         if len(views_to_close) > 0:
@@ -125,7 +196,13 @@ else:
             if not e_del:
                 ignored += 1
                 continue
-            if type(e_del) in ignore_types:
+
+            try:
+                el_type = e_del.Category.Name
+            except:
+                el_type = "Other"
+
+            if el_type in ignore_types:
                 ignored += 1
                 continue
 
@@ -133,10 +210,7 @@ else:
 
             if i <= limit or limit == 0:
                 i += 1
-                try:
-                    el_type = e_del.Category.Name
-                except:
-                    el_type = "Other"
+
                 if el_type not in result_dict:
                     result_dict[el_type] = []
                 result_dict[el_type].append(e_del_id)
@@ -171,3 +245,5 @@ else:
         print("\n\t"  + ",".join(element_ids_str))
         print("\n\n\n")
 
+if __name__ == '__main__':
+    main()
