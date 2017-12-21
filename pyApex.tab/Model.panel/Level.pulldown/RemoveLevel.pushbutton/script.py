@@ -28,6 +28,7 @@ else:
 
 from Autodesk.Revit.DB import *
 
+
 class CheckBoxLevel:
     def __init__(self, level, default_state=False):
         self.level = level
@@ -70,7 +71,7 @@ def LevelChangePreselected(selected_ids, target_level_id):
 
             if not offset:
                 offset = el.get_Parameter(BuiltInParameter.ROOM_LOWER_OFFSET)
-                
+
             print(offset.AsValueString())
             finalElev = float(LevElev) + float(offset.AsValueString().replace(" ", ""))
             print(offset.AsValueString(), finalElev)
@@ -156,4 +157,5 @@ def main():
         logger.error("No object were changed")
 
 
-main()
+if __name__ == '__main__':
+    main()

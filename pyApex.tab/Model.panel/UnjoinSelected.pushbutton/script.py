@@ -14,15 +14,16 @@ pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:
     from pyrevit.revit import doc, selection
-
+    selection = selection.get_selection()
 else:
     from revitutils import doc, selection
 
+selected_ids = selection.element_ids
 
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, JoinGeometryUtils, Transaction
 from Autodesk.Revit.UI import TaskDialog,TaskDialogCommonButtons
 
-selected_ids = selection.element_ids
+
 
 rng = range(len(selected_ids))
 checked_pairs = []
@@ -55,5 +56,3 @@ if len(joined_pairs) > 0:
     t.Commit()
 
 TaskDialog.Show(__title__,"%d pairs of elements unjoined" % c)
-
-

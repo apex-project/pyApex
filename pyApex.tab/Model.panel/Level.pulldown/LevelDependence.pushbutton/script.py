@@ -38,8 +38,8 @@ def get_config_exceptions():
 
     except:
         import os
-        config_default_path = os.path.join( os.path.dirname(os.path.realpath(__file__)), \
-            "ignore_types_default.txt" )
+        config_default_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                           "ignore_types_default.txt")
         try:
             with open(config_default_path) as f:
                 conf = f.readline()
@@ -81,10 +81,12 @@ class CheckBoxLevel:
     def __bool__(self):
         return self.state
 
+
 def all_levels():
     cl = FilteredElementCollector(doc)
     levels_all = cl.OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().ToElements()
     return levels_all
+
 
 def select_levels_dialog(levels_all):
     options = []
@@ -94,14 +96,14 @@ def select_levels_dialog(levels_all):
         options.append(cb)
 
     selected = SelectFromCheckBoxes.show(options, title='Select level to check', width=300,
-                                               button_name='Select')
+                                         button_name='Select')
     if not selected:
         return
 
-    return [c.level for c in selected if c.state == True]
+    return [c.level for c in selected if c.state is True]
 
 
-#filter
+# filter
 def get_levels_from_selection(selected_elements):
     result = []
     for e in selection.elements:
@@ -249,6 +251,7 @@ def main():
         element_ids_str = map(lambda x: str(x.IntegerValue), element_ids)
         print("\n\t"  + ",".join(element_ids_str))
         print("\n\n\n")
+
 
 if __name__ == '__main__':
     main()
