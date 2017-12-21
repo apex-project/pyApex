@@ -88,6 +88,8 @@ Remove selected level safely - transfer all dependent elements to another level.
 
 > Элементы остаются на своих местах, просто меняется из базовый уровень.
 
+---
+
 ### Objects on level
 
 ###### EN
@@ -106,6 +108,7 @@ List elements dependent on selected levels. To setup exceptions and limit run wi
 
 > Принцип работы: Скрипт пытается удалить уровнь, а затем определяет, какие элементы были затронуты
 
+---
 
 ### Unjoin many
 
@@ -131,7 +134,11 @@ Useful to get rid of warnings "Highlighted Elements are Joined but do not Inters
 
 ### Copy VG Filters
 
-copying filter from one view template to others
+Copying filter overrides from selected or active view to chosen view templates. If VG override for this filter already exists in a template it will be updated.
+
+> Context: Select or activate a view
+
+---
 
 ### Text Notes 2 CSV
 
