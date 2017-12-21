@@ -74,6 +74,8 @@ Zoom in active view to Project base point. If it's hidden - enables "Reveal Hidd
 
 ### Remove Level
 
+__beta__
+
 ###### EN
 
 Remove selected level safely - transfer all dependent elements to another level. First select levels you want to remove, then select level where you want to move orphan elements.
@@ -86,17 +88,42 @@ Remove selected level safely - transfer all dependent elements to another level.
 
 > Элементы остаются на своих местах, просто меняется из базовый уровень.
 
-### Level Dependence
+### Objects on level
 
-show elements dependen of selected levels
+###### EN
 
-### Unjoin Selected
+List elements dependent on selected levels. To setup exceptions and limit run with Shift-click.
 
-unjoin all selected geometry
+> Context: You can either activate a Plan View, select Plan Views in project browser or select Levels on a section. If nothing selected, you'll be able to choise levels from a list.
 
-### Unjoin Warnings
+> How it works: Script tries to delete a level and looks for dependent elements.
 
-unjoin elements by pasted text from Warnings Reports
+###### RU
+
+Выдает список элементов, зависимых от выбранных видов. Для настроек исключения и ограничения кол-ва элементов, которые выводятся в списке, запустите с зажатым Shift
+
+> Контекст: Можно либо активировать План, либо выбрать Планы в Браузере проекта, либо выбрать уровни на разрезе или фасаде. Если ничего не выбрано, вам будет предложено выбрать уровнь из списка.
+
+> Принцип работы: Скрипт пытается удалить уровнь, а затем определяет, какие элементы были затронуты
+
+
+### Unjoin many
+
+###### EN
+
+Unjoins all selected geometry. (undo Join command)
+
+Useful to get rid of warnings "Highlighted Elements are Joined but do not Intersect"
+
+> Context: Some elements should be selected
+
+###### RU
+
+Разъединяет все выбранные элементы. (отменяет команду Соединить)
+
+Полезно в случаях, когда нужно избавиться от предупреждения "Элементы соединены, но не пересекаются"
+
+> Контекст: Должно быть выбрано несколько элементов
 
 ---
 
