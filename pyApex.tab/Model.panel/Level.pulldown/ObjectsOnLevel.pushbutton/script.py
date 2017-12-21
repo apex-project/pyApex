@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
-__title__ = 'Level dependencies'
-__doc__ = 'List elements dependent of selected level\nYou can select plan view to check its level'
+__title__ = 'Objects on level'
+__doc__ = """List elements dependent on selected levels. To setup exceptions and limit run with Shift-click.
+Context: You can either activate a Plan View, select Plan Views in project browser or select Levels on a section. If nothing selected, you'll be able to choise levels from a list.
 
-__helpurl__ = "https://apex-project.github.io/pyApex/help#level-dependencies"
+Выдает список элементов, зависимых от выбранных видов. Для настроек исключения и ограничения кол-ва элементов, которые выводятся в списке, запустите с зажатым Shift
+Контекст: Можно либо активировать План, либо выбрать Планы в Браузере проекта, либо выбрать уровни на разрезе или фасаде. Если ничего не выбрано, вам будет предложено выбрать уровнь из списка."""
+
+__helpurl__ = "https://apex-project.github.io/pyApex/help#objects-on-level"
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION

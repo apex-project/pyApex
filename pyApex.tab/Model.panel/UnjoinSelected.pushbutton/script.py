@@ -1,8 +1,17 @@
 # -*- coding: utf-8 -*-
 __title__ = 'Unjoin many'
-__doc__ = """"""
+
+__doc__ = """Unjoins all selected geometry. (undo Join command)
+Useful to get rid of warnings "Highlighted Elements are Joined but do not Intersect"
+ Context: Some elements should be selected
+
+Разъединяет все выбранные элементы. (отменяет команду Соединить)
+Полезно в случаях, когда нужно избавиться от предупреждения "Элементы соединены, но не пересекаются"
+Контекст: Должно быть выбрано несколько элементов"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#unjoin-many"
+
+__context__ = 'Selection'
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
@@ -22,8 +31,6 @@ selected_ids = selection.element_ids
 
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, JoinGeometryUtils, Transaction
 from Autodesk.Revit.UI import TaskDialog,TaskDialogCommonButtons
-
-
 
 rng = range(len(selected_ids))
 checked_pairs = []

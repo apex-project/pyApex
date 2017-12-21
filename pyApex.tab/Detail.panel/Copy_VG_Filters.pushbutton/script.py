@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 __title__ = 'Copy VG filters'
-__doc__ = 'Copying Visibility/Graphics filters from active or selected view to specified view templates'
+__doc__ = """Copying filter overrides from selected or active view to chosen view templates. 
+If VG override for this filter already exists in a template it will be updated.
+
+Context: Select or activate a view
+"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#copy-vg-filters"
 
