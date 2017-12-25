@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
-__doc__ = """List all text notes on placed views\nto csv D:\\textnotes..."""
+__doc__ = """Export all textnotes content to csv.
+
+Context: select views or sheets where you want to search for textnotes
+
+Экспорт содержимого всех "Текстов" в csv-файл.
+
+Контекст: выберите виды или листы, на которых необходимо найти тексты
+"""
 __title__ = 'TextNotes2csv'
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#TextNotes2csv"

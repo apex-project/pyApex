@@ -4,6 +4,11 @@ __doc__ = """Copying filter overrides from selected or active view to chosen vie
 If VG override for this filter already exists in a template it will be updated.
 
 Context: Select or activate a view
+
+Копирует настройки фильтров из настроек "Переопределения видимости/графики" для текущего вида в выбраныне шеблоны видов.
+Если для фильтра уже заданы переопределения в целевом шаблоне, они будут обновлены.
+
+Контекст: Выбранный или активный вид
 """
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#copy-vg-filters"
@@ -158,8 +163,13 @@ def main():
     vt_dict = get_view_templates(doc, sel_set=sel_set)
 
     if not vt_dict:
-        logger.error('Project has no view templates')
+        logger.warning('Project has no view templates')
         return
+
+    if not active_template_filters_ch:
+        logger.warning('Active view has no filter overrides')
+        return
+
     filter_checkboxes = SelectFromCheckBoxes.show(active_template_filters_ch,
                                                   title='Select filters to copy',
                                                   button_name='Select filters')
