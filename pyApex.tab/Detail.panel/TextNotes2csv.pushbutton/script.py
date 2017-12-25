@@ -1,100 +1,186 @@
 # -*- coding: utf-8 -*-
-__doc__ = 'List all text notes on placed views\nto csv D:\\textnotes...'
+__doc__ = """List all text notes on placed views\nto csv D:\\textnotes..."""
+__title__ = 'TextNotes2csv'
+
+__helpurl__ = "https://apex-project.github.io/pyApex/help#TextNotes2csv"
+
 import csv
 import os
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB.Architecture import *
-from scriptutils.userinput import WPFWindow, pick_folder
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 
 
-uidoc = __revit__.ActiveUIDocument
-doc = __revit__.ActiveUIDocument.Document
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
-cl_sheets = FilteredElementCollector(doc)
-sheetsnotsorted = cl_sheets.OfCategory(BuiltInCategory.OST_Sheets).WhereElementIsNotElementType().ToElements()
-# print(len(sheetsnotsorted))
-sheets = sorted(sheetsnotsorted, key=lambda x: x.SheetNumber)
+pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
-collector = FilteredElementCollector(doc) #collect elements visible on view
-elements = collector.OfClass(TextNote).ToElements()
-textnotes_dict = {}
-unique = []
+if pyRevitNewer44:
+    from pyrevit import script, revit
+    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes, pick_folder, pick_file, save_file
+    output = script.get_output()
+    logger = script.get_logger()
+    from pyrevit.revit import doc, uidoc, selection
+    selection = selection.get_selection()
+    my_config = script.get_config()
 
-for e in elements:
-    if e.OwnerViewId not in textnotes_dict.keys():
-        textnotes_dict[e.OwnerViewId] = []
-    etext = e.Text.replace('\n',' ').replace('\r',' ')
-    if etext not in unique:
-        unique.append(etext)
-        textnotes_dict[e.OwnerViewId].append((e.Id,etext))
-
-all_rows = []
-
-selection = uidoc.Selection.GetElementIds()
-sheets = filter(lambda e: type(doc.GetElement(e)) == ViewSheet, selection)
-# test = doc.GetElement(selection[0])
-# print(type(test))
-if len(sheets) == 0:
-    print('Please, select sheets')
 else:
-    print('%d sheets selected' % len(sheets))
-    for s_id in selection:
+    from scriptutils import logger
+    from scriptutils.userinput import WPFWindow, pick_folder, pick_file, save_file
+    from revitutils import doc, uidoc, selection
+    my_config = script.config
+
+
+def get_views():
+    selection = uidoc.Selection.GetElementIds()
+    views_selected = filter(lambda e: doc.GetElement(e).GetType().IsSubclassOf(View), selection)
+
+    if len(views_selected) == 0:
+        error_text = "No views selected.\nTextnotes from all project views will be exported."
+
+        q = TaskDialog.Show(__title__, error_text,
+                            TaskDialogCommonButtons.Ok | TaskDialogCommonButtons.Cancel)
+
+        if str(q) == "Cancel":
+            return
+        else:
+            return None
+
+    else:
+        return views_selected
+
+
+def extract_views_from_sheets(views):
+    result = []
+    for v in views:
+        if type(view) == ViewSheet:
+            result += v.GetAllPlacedViews()
+        else:
+            result.append(view)
+
+    return result
+
+#
+# def views_from_sheet(view):
+#     if type(view) == ViewSheet:
+#         views = s.GetAllPlacedViews()
+#     else:
+#         views = [view]
+#
+#     return views
+
+
+def get_textnotes(view_ids=None):
+    collector = FilteredElementCollector(doc)  # collect elements visible on view
+    elements = collector.OfClass(TextNote).ToElements()
+
+    textnotes_dict = {}
+    unique = []
+
+    for e in elements:
+        owner_view_id = e.OwnerViewId
+
+        if view_ids and owner_view_id not in view_ids:
+            continue
+
+        if e.OwnerViewId not in textnotes_dict.keys():
+            textnotes_dict[e.OwnerViewId] = []
+
+        etext = e.Text.replace('\n', ' ').replace('\r', ' ')
+
+        if etext not in unique:
+            unique.append(etext)
+            textnotes_dict[e.OwnerViewId].append((e.Id, etext))
+
+    return textnotes_dict
+
+
+def format_results(textnotes_dict):
+    cl_sheets = FilteredElementCollector(doc)
+    sheetsnotsorted = cl_sheets.OfCategory(BuiltInCategory.OST_Sheets).WhereElementIsNotElementType().ToElements()
+    sheetsnotsorted = list(sheetsnotsorted)
+    # Last empty element to check not placed views
+    sheetsnotsorted.append(None)
+
+    result = []
+
+    # List of views which wasnt checked
+    views_left = textnotes_dict.keys()
+
+    for s in sheetsnotsorted:
+        if s:
+            sheet_views = [s.Id]
+            sheet_id = s.Id
+            sheet_name = s.Name
+            sheet_views += s.GetAllPlacedViews()
+        else:
+            sheet_name = ""
+            sheet_id = ""
+            sheet_views = views_left
+
         # todo: search for use of .Parameter[] indexer.
-        # print(s.Name)
-        s = doc.GetElement(s_id)
-        sheet_name = s.Name
-        views = s.GetAllPlacedViews()
-
-        for v_id in views:
-            v = doc.GetElement(v_id)
-
+        for v_id in sheet_views:
             if v_id in textnotes_dict:
+                views_left.remove(v_id)
+
+                v = doc.GetElement(v_id)
+
                 tt = textnotes_dict[v_id]
+
                 for t in tt:
-                    all_rows.append([sheet_name,s.Id,v.Name,v_id,t[1],t[0]])
+                    result.append([sheet_name,sheet_id,
+                                   v.Name,v_id,
+                                   t[1],t[0]])
 
-            # collector = FilteredElementCollector(doc,v_id) #collect elements visible on view
-            # elements = collector.OfClass(TextNote).ToElements()
-            # # print(v.Name)
-            # for e in elements:
-            #     # print(e.Text,e.Id)
-            #     if e.Text not in unique:
-            #         unique.append(e.Text)
+    return result
 
-        # break
-        # print('{2} NUMBER: {0}   NAME:{1}'.format(name.rjust(10),
-        #                                       s.LookupParameter('Имя листа').AsString().ljust(50),
-        #                                       s.Id.ToString()
-        #                                       ))
+def write_csv(all_rows):
+    default_filename = "textnotes_%s" % doc.Title
 
-    doc_info = doc.ProjectInformation
-    ppath = doc.PathName
-    pfilename = os.path.splitext(os.path.split(ppath)[1])[0]
+    try:
+        init_dir = my_config.init_dir
+        if not os.path.exists(init_dir):
+            init_dir = ''
+    except:
+        init_dir = ''
 
-    csvfile = 'D:\\textnotes_%s.csv' % pfilename
-    print('%s\n\nWriting...' % csvfile)
+    export_file = save_file(file_ext="csv", init_dir=init_dir, default_name=default_filename)
 
+    print('%s\n\nWriting...' % export_file)
 
-    with open(csvfile, 'w') as csvfile:
-        writer = csv.writer(csvfile, delimiter=';',quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
-        writer.writerow(['Sheet','SheetID','View','ViewID','Text','TextId'])
+    with open(export_file, 'w') as f:
+        writer = csv.writer(f, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+        writer.writerow(['Sheet', 'SheetID', 'View', 'ViewID', 'Text', 'TextId'])
         writer.writerow([])
+
         for r in all_rows:
             row = []
             for v in r:
-                # print(v)
-                # try:
-
-                #     vv = v
-                #     'encoding error'
-                # except:
-                # print(v)
                 try:
                     vv = v.ToString()
                 except:
                     vv = str(v)
                 row.append(vv)
-            # print(row)
+
             writer.writerow([unicode(s).encode("utf-8") for s in row])
 
-    print('all done')
+    print('Completed')
+
+
+def main():
+    views_selected = get_views()
+
+    if views_selected:
+        print('%d views selected' % len(views_selected))
+
+    textnotes_dict = get_textnotes(views_selected)
+    result = format_results(textnotes_dict)
+    write_csv(result)
+
+
+if __name__ == "__main__":
+    main()
