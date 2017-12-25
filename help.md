@@ -134,15 +134,38 @@ Useful to get rid of warnings "Highlighted Elements are Joined but do not Inters
 
 ### Copy VG Filters
 
+###### EN
+
 Copying filter overrides from selected or active view to chosen view templates. If VG override for this filter already exists in a template it will be updated.
 
 > Context: Select or activate a view
+
+###### RU
+
+Копирует настройки фильтров из настроек "Переопределения видимости/графики" для текущего вида в выбраныне шеблоны видов.
+Если для фильтра уже заданы переопределения в целевом шаблоне, они будут обновлены.
+
+> Контекст: Выбранный или активный вид
 
 ---
 
 ### Text Notes 2 CSV
 
-finds text notes on selected views and saves it's content to csv
+###### EN
+
+Export all textnotes content to csv.
+
+> Context: select views or sheets where you want to search for textnotes
+
+> If nothing selected it will search through all views in project. If sheets selected it will search both on sheet view and on views placed on the sheet.
+
+###### RU
+
+Экспорт содержимого всех "Текстов" в csv-файл.
+
+> Контекст: выберите виды или листы, на которых необходимо найти тексты
+
+> Если ничего не выбрано, поиск будет выполняться по всем видам в проекте. Если выбран Лист, поиск будет выполняться как на листе, так и на видах, размещенных на листе
 
 ---
 
