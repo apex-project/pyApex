@@ -9,6 +9,8 @@ pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 if pyRevitNewer44:
     from pyrevit import script
+    from pyrevit.forms import WPFWindow
+
     my_config = script.get_config()
 else:
     from scriptutils import this_script as script
