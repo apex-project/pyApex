@@ -7,37 +7,41 @@ __doc__ = 'Select many objects by IDs or error text'
 
 import os.path
 from pprint import pprint
-import time
+
+import operator
 
 from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, ViewType
-from Autodesk.Revit.UI import TaskDialog,TaskDialogCommonButtons
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType
 from System.Collections.Generic import List
 from Autodesk.Revit.DB import Transaction, TransactionGroup
-
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
 except:
     from pyrevit import versionmgr
+
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
 pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 if pyRevitNewer44:
-    from pyrevit import script, revit, forms
+    from pyrevit import script, revit
     from pyrevit.forms import WPFWindow
 
     logger = script.get_logger()
     from pyrevit.revit import doc, uidoc, selection
-    selection = selection.get_selection()
 
+    selection = selection.get_selection()
+    my_config = script.get_config()
 else:
     forms = None
     from scriptutils import logger
     from scriptutils import this_script as script
     from scriptutils.userinput import WPFWindow
     from revitutils import doc, uidoc, selection
+
+    my_config = script.config
 
 
 # uidoc = __revit__.ActiveUIDocument
@@ -105,55 +109,199 @@ def get_selection():
 class EnumerateWindow(WPFWindow):
     def __init__(self, xaml_file_name, selected_elements):
         is_geom_list, not_geom_list = self.separate_geometry(selected_elements)
-        sel_filtered, self.is_geom = self.filter_geometry_and_other(is_geom_list, not_geom_list)
+        self.selection, self.is_geom = self.filter_geometry_and_other(is_geom_list, not_geom_list)
 
-        if not sel_filtered:
+        self.extra_geom_keys = [
+                                # "<Along curve>",
+                                "<X coordinate>",
+                                "<Y coordinate>",
+                                "<Z coordinate>"
+                                ]
+
+        if not self.selection:
             logger.error("Selection error or wrong elements were selected")
             return
 
-        parameters_dict = self.get_selection_parameters(sel_filtered)
+        parameters_dict = self.get_selection_parameters(self.selection)
 
-        self.parameters_sortable = self.filter_sortable(sel_filtered, parameters_dict)
+        self.parameters_sortable = self.filter_sortable(self.selection, parameters_dict)
         self.parameters_editable = self.filter_editable(parameters_dict)
 
         WPFWindow.__init__(self, xaml_file_name)
         self._set_comboboxes()
+        self.read_config()
+
+    def read_config(self):
+        try:
+            self.textFormat.Text = str(my_config.text_format)
+        except:
+            self.textFormat.Text = my_config.text_format = "%s"
+
+        try:
+            self.leadingZeros.Text = str(my_config.leading_zeros)
+        except:
+            self.leadingZeros.Text = my_config.leading_zeros = "0"
+
+        try:
+            self.startFrom.Text = str(my_config.start_from)
+        except:
+            self.startFrom.Text = my_config.start_from = "1"
+
+        try:
+            self.parameterToSort.Text = str(my_config.parameter_to_sort)
+        except:
+            self.parameterToSort.Text = my_config.parameter_to_sort = ""
+
+        try:
+            self.parameterToSort.Text = str(my_config.parameter_to_sort)
+        except:
+            self.parameterToSort.Text = my_config.parameter_to_sort = ""
+
+        try:
+            self.parameterToSet.Text = str(my_config.parameter_to_set)
+        except:
+            self.parameterToSet.Text = my_config.parameter_to_set = ""
+
+        try:
+            self.isReversed.IsChecked = my_config.is_reversed
+        except:
+            self.isReversed.IsChecked = my_config.is_reversed = False
+        script.save_config()
+
+    def write_config(self):
+        my_config.text_format = self.textFormat.Text
+        my_config.leading_zeros = self.leadingZeros.Text
+        my_config.parameter_to_sort = self.parameterToSort.Text
+        my_config.parameter_to_sort = self.parameterToSort.Text
+        my_config.parameter_to_set = self.parameterToSet.Text
+        my_config.is_reversed = self.isReversed.IsChecked
+        script.save_config()
 
     @property
     def parameter_to_sort(self):
-        return self.parameterToSort.Text
+        p = self.parameterToSort.Text
+        if type(p) == str and p in self.extra_geom_keys:
+            return p
+        else:
+            return self.parameters_sortable[p]
 
     @property
     def parameter_to_set(self):
-        return self.parameterToSet.Text
+        p = self.parameters_editable[self.parameterToSet.Text]
+        return p
 
     @property
     def text_format(self):
-        return self.textFormat.Text
+        t = self.textFormat.Text.strip()
+        if len(t) == 0:
+            return
+
+        if "%s" not in t:
+            t += " %s"
+
+        return t
 
     @property
     def leading_zeros(self):
-        return self.leadingZeros.Text
+        try:
+            n = int(self.leadingZeros.Text)
+        except:
+            n = 0
+        return n
 
     @property
     def start_from(self):
-        return self.startFrom.Text
+        return int(self.startFrom.Text)
+
+    @property
+    def is_reversed(self):
+        return self.isReversed.IsChecked
 
     def run(self, sender, args):
-        pass
+        result = self.sort(self.selection, self.parameter_to_sort, self.is_reversed)
+        i = self.start_from
+        text_format = self.text_format
+        zeros = self.leading_zeros
 
+        t = Transaction(doc, __title__)
+        t.Start()
+        for r in result:
+            e = r[0]
+            definition = self.parameter_to_set.Definition
+            param = e.get_Parameter(definition)
+            if zeros:
+                _i = str(i).zfill(zeros)
+            else:
+                _i = str(i)
+            self.parameter_value_set(param, _i, text_format)
+            i += 1
+        t.Commit()
+
+        my_config.start_from = i
+        script.save_config()
+
+        self.write_config()
+
+    def sort(self, elements, parameter_to_sort, reverse=False):
+        param_dict = self.element_parameter_dict(elements, parameter_to_sort)
+        param_dict_sorted = sorted(param_dict.items(), key=operator.itemgetter(1), reverse=reverse)
+        return param_dict_sorted
+        # return map(lambda x: x[0], param_dict_sorted)
+
+    def element_parameter_dict(self, elements, parameter_to_sort):
+        result = {}
+        for e in elements:
+            if type(parameter_to_sort) == str:
+                if parameter_to_sort[0] == "<" and parameter_to_sort[2:] == " coordinate>":
+                    parameter_loc = parameter_to_sort[1]
+                    loc = e.Location
+                    v = getattr(loc.Point, parameter_loc)
+                else:
+                    logger.error("Parameter error")
+                    return
+            else:
+                param = e.get_Parameter(parameter_to_sort.Definition)
+                v = self.parameter_value_get(param)
+            if v:
+                result[e] = v
+
+        return result
+
+    def parameter_value_get(self, parameter):
+        if not parameter.HasValue:
+            return
+
+        if parameter.StorageType == StorageType.Double:
+            x = float(parameter.AsDouble())
+        elif parameter.StorageType == StorageType.Integer:
+            x = int(parameter.AsInteger())
+        else:
+            try:
+                x = float(parameter.AsString().strip().replace(",", "."))
+            except:
+                x = parameter.AsString()
+        return x
+
+    def parameter_value_set(self, parameter, value, text_format):
+        if parameter.StorageType == StorageType.Double or parameter.StorageType == StorageType.Integer:
+            if text_format:
+                try:
+                    value = str(float(text_format % value))
+                except:
+                    pass
+            parameter.SetValueString(value)
+        else:
+            if text_format:
+                parameter.Set(text_format % value)
+            else:
+                parameter.Set(value)
 
     def _set_comboboxes(self):
         sortable_keys = self.parameters_sortable.keys()
 
         if self.is_geom:
-            sortable_keys += [
-                "---",
-                "<Along curve>",
-                "<X coordinate>",
-                "<Y coordinate>",
-                "<Z coordinate>"
-            ]
+            sortable_keys += ["---"]
+            sortable_keys += self.extra_geom_keys
 
         self.parameterToSort.ItemsSource = sortable_keys
         self.parameterToSet.ItemsSource = self.parameters_editable.keys()
@@ -174,7 +322,6 @@ class EnumerateWindow(WPFWindow):
                 not_geom.append(e)
 
         return is_geom, not_geom
-
 
     def filter_geometry_and_other(self, is_geom, not_geom):
         elements = None
@@ -200,7 +347,6 @@ class EnumerateWindow(WPFWindow):
             is_geom_bool = True if is_geom else False
 
         return elements, is_geom_bool
-
 
     def get_selection_parameters(self, elements):
         """
@@ -237,7 +383,6 @@ class EnumerateWindow(WPFWindow):
 
         return result
 
-
     def filter_sortable(self, elements, parameters):
         """
         Filter parameters which has value for at least some of elements
@@ -255,7 +400,6 @@ class EnumerateWindow(WPFWindow):
                     break
         return result
 
-
     def filter_editable(self, parameters):
         """
         Filter parameters which can be modified by users
@@ -269,13 +413,15 @@ class EnumerateWindow(WPFWindow):
                   and p.StorageType not in ignore_types}
         return result
 
-
     def NumberValidationTextBox(self, sender, e):
         try:
             x = int(e.Text.strip())
             e.Handled = False
+            return x
+
         except:
             e.Handled = True
+
 
 def main():
     # Input

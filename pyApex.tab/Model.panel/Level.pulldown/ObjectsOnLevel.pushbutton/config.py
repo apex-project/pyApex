@@ -29,8 +29,9 @@ class LevelDependenceConfigWindow(WPFWindow):
         try:
             self.exceptions.Text = str(my_config.exceptions)
         except:
+            pass
 
-            script.save_config()
+        script.save_config()
 
     # noinspection PyUnusedLocal
     # noinspection PyMethodMayBeStatic
@@ -40,7 +41,6 @@ class LevelDependenceConfigWindow(WPFWindow):
 
         script.save_config()
         self.Close()
-
 
     def NumberValidationTextBox(self, sender, e):
         try:
