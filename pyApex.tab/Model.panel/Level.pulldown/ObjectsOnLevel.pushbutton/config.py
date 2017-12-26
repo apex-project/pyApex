@@ -49,5 +49,6 @@ class LevelDependenceConfigWindow(WPFWindow):
         except:
             e.Handled = True
 
+
 if __name__ == '__main__':
     LevelDependenceConfigWindow('LevelDependenceConfig.xaml').ShowDialog()

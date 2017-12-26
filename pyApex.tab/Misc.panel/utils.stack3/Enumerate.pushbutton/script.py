@@ -119,7 +119,27 @@ class EnumerateWindow(WPFWindow):
         WPFWindow.__init__(self, xaml_file_name)
         self._set_comboboxes()
 
-    def run(self):
+    @property
+    def parameter_to_sort(self):
+        return self.parameterToSort.Text
+
+    @property
+    def parameter_to_set(self):
+        return self.parameterToSet.Text
+
+    @property
+    def text_format(self):
+        return self.textFormat.Text
+
+    @property
+    def leading_zeros(self):
+        return self.leadingZeros.Text
+
+    @property
+    def start_from(self):
+        return self.startFrom.Text
+
+    def run(self, sender, args):
         pass
 
 
@@ -249,6 +269,13 @@ class EnumerateWindow(WPFWindow):
                   and p.StorageType not in ignore_types}
         return result
 
+
+    def NumberValidationTextBox(self, sender, e):
+        try:
+            x = int(e.Text.strip())
+            e.Handled = False
+        except:
+            e.Handled = True
 
 def main():
     # Input

@@ -18,6 +18,7 @@ pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:
     from pyrevit import script, revit
+    from pyrevit.forms import WPFWindow
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
@@ -25,10 +26,15 @@ if pyRevitNewer44:
     uidoc = revit.uidoc
     selection = revit.get_selection()
     datafile = script.get_document_data_file("SelList", "pym")
+    my_config = script.get_config()
+
 else:
     from scriptutils import logger, this_script
     from revitutils import doc, uidoc
+    from scriptutils import this_script
+    from scriptutils.userinput import WPFWindow
 
+    my_config = this_script.config
     output = this_script.output
     datafile = this_script.get_document_data_file(0, "pym", command_name="SelList")
 
@@ -137,10 +143,9 @@ def parse(value, reduce_duplicates = False):
         logger.error("Ids weren't found on lines: \n" + "\n".join(errors))
 
 
-from scriptutils import this_script
-from scriptutils.userinput import WPFWindow
 
-my_config = this_script.config
+
+
 
 class ExtractIdsTextWindow(WPFWindow):
     def __init__(self, xaml_file_name):
