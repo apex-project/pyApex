@@ -349,9 +349,11 @@ class EnumerateWindow(WPFWindow):
         for p_name, p in parameters.items():
             for e in elements:
                 param = e.get_Parameter(p.Definition)
-                if param.HasValue:
-                    result[p_name] = p
-                    break
+                if param:
+                    # TODO figure out why param is None here
+                    if param.HasValue:
+                        result[p_name] = p
+                        break
         return result
 
     def filter_editable(self, parameters):
