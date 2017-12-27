@@ -1,19 +1,25 @@
 # -*- coding: utf-8 -*-
-__title__ = 'Enumerate'
-__doc__ = """"""
+__title__ = 'Sort and enumerate'
+__doc__ = """Sort selected objects, views or sheets by specified parameter, coordinate or along curve. 
+Then write order number of each element as another parameter
 
-__helpurl__ = "https://apex-project.github.io/pyApex/help#enumerate"
+Context: at least 2 objects must be selected
+
+Сортирует выделенные объекты, виды или листы по определенному параметру, координате или вдоль линии.
+Затем записывает порядковый номер каждого из объектов в другой параметр.
+
+Контекст: как минимум 2 объекта должны быть выделены"""
+
+__context__ = 'Selection'
+
+__helpurl__ = "https://apex-project.github.io/pyApex/help#sort-and-enumerate"
 __doc__ = 'Select many objects by IDs or error text'
-
-import os.path
-from pprint import pprint
 
 import operator
 
-from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, ViewType
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType
-from System.Collections.Generic import List
+
 from Autodesk.Revit.DB import Transaction, TransactionGroup
 
 try:
@@ -26,11 +32,11 @@ except:
 pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 if pyRevitNewer44:
-    from pyrevit import script, revit
+    from pyrevit import script
     from pyrevit.forms import WPFWindow
 
     logger = script.get_logger()
-    from pyrevit.revit import doc, uidoc, selection
+    from pyrevit.revit import doc, selection
 
     selection = selection.get_selection()
     my_config = script.get_config()
@@ -39,46 +45,10 @@ else:
     from scriptutils import logger
     from scriptutils import this_script as script
     from scriptutils.userinput import WPFWindow
-    from revitutils import doc, uidoc, selection
+    from revitutils import doc, selection
 
     my_config = script.config
 
-
-# uidoc = __revit__.ActiveUIDocument
-# doc = __revit__.ActiveUIDocument.Document
-# doc_info = doc.ProjectInformation
-# ppath = doc.PathName
-# pfilename = os.path.splitext(os.path.split(ppath)[1])[0]
-#
-# dir_path = os.path.dirname(os.path.realpath(__file__))
-#
-# print os.path.dirname(os.path.realpath(__file__))
-#
-# uidoc = __revit__.ActiveUIDocument
-# doc = __revit__.ActiveUIDocument.Document
-#
-# selIds = uidoc.Selection.GetElementIds()
-# sheets = []
-# for eId in selIds:
-#     sheets.append(doc.GetElement(eId))
-#
-# t = Transaction(doc, "Sheets enum")
-# t.Start()
-# for v in sheets:
-#     part = 0
-#
-#     for p in v.GetParameters("INF_Sheet number"):
-#         if p.AsString():
-#             shn = p.AsString()
-#
-#     if shn:
-#         for p in v.GetParameters("Номер листа"):
-#             if p.AsString() and p.IsReadOnly==False:
-#                 p.Set("AS-CNCP л." + str(shn))
-#
-#     print shn
-#
-# t.Commit()
 
 
 def get_selection():
@@ -88,22 +58,6 @@ def get_selection():
     :return: selected objects or None
     """
     return selection.elements
-
-
-# def filter_selection_geometry(selection, leave_geom):
-#     """
-#     Filter selection to leave only preferable type
-#
-#     :param selection: list of elements
-#     :param leave_geom: bool - leave only geometry or only views, sheets etc.
-#     :return: filtered list of elements
-#     """
-#     result = []
-#     for e in selection:
-#         if leave_geom:
-#
-#         else:
-#
 
 
 class EnumerateWindow(WPFWindow):
@@ -437,26 +391,5 @@ def main():
     EnumerateWindow('window.xaml', sel).ShowDialog()
 
 
-    #
-    # print(parameters_sortable.keys())
-    # print(parameters_editable.keys())
-    # for n, p in parameters_editable.items():
-    #     print(n, p.StorageType)
-    # Let user to set options
-
-    # filter editable
-    # generate form
-    # get user settings
-
-    # Sort
-
-    # Update parameters
-
-
 if __name__ == "__main__":
     main()
-    # e = selection.elements[0]
-    # print()
-    # for p in e.Parameters:
-    #     print(p.Definition.Name, p.StorageType, p.UserModifiable, p.HasValue, p.AsValueString())
-    #     print("\n")
