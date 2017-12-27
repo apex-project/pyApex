@@ -173,7 +173,21 @@ Export all textnotes content to csv.
 
 ### SheetsEnum 
 
-enumerate selected sheets (WIP)
+###### EN
+
+Sort selected objects, views or sheets by specified parameter, coordinate or along curve. 
+Then write order number of each element as another parameter
+
+> Context: at least 2 objects must be selected
+
+###### RU
+
+Сортирует выделенные объекты, виды или листы по определенному параметру, координате или вдоль линии.
+Затем записывает порядковый номер каждого из объектов в другой параметр.
+
+> Контекст: как минимум 2 объекта должны быть выделены
+
+---
 
 ### White Materials
 
