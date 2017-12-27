@@ -171,7 +171,7 @@ Export all textnotes content to csv.
 
 ## 4. Misc
 
-### SheetsEnum 
+### Sort and enumerate 
 
 ###### EN
 
