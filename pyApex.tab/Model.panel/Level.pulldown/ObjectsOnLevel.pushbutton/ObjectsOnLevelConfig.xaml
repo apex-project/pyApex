@@ -9,19 +9,23 @@
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <Label x:Name="label1" Grid.Row="0">
+
+
+        <Label x:Name="label1" Grid.Row="0" Grid.ColumnSpan="3">
             <TextBlock TextWrapping="WrapWithOverflow">
                         List of types exceptions<LineBreak/>
                         (one element type name per line)
             </TextBlock>
         </Label>
-        <TextBox x:Name="exceptions" HorizontalAlignment="Stretch" Grid.Row="1" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Stretch"/>
+        <TextBox x:Name="exceptions" HorizontalAlignment="Stretch" Grid.Row="1" Grid.ColumnSpan="3" TextWrapping="Wrap" Text="TextBox" AcceptsReturn="True" VerticalAlignment="Stretch"/>
 
         <Label x:Name="label2" Content="Limit of IDs to show (0 = unlimited)" Margin="0,5,0,0"  Grid.Row="2"/>
         <TextBox x:Name="limit" Height="23" Width="100" HorizontalAlignment="Left" TextWrapping="Wrap" Text="0"
-                 PreviewTextInput="NumberValidationTextBox" Grid.Row="3"/>
+                 PreviewTextInput="NumberValidationTextBox" Grid.Row="3" Grid.ColumnSpan="3"/>
+        <Button Grid.Row="4" Margin="0,10,0,0" Click="restore_defaults" Content="Defaults" HorizontalAlignment="Right" Width="100"/>
+        <Button Grid.Row="5" Margin="0,10,0,0" Click="save_options" Content="Save options" />
 
-        <Button Grid.Row="4" Margin="0,20,0,0" Click="save_options" Content="Save options" />
     </Grid>
 </Window>

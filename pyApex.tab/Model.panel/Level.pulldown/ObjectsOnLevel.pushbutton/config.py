@@ -9,38 +9,58 @@ pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 if pyRevitNewer44:
     from pyrevit import script
-    from pyrevit.forms import WPFWindow
+    from pyrevit.forms import WPFWindow, alert
 
     my_config = script.get_config()
 else:
     from scriptutils import this_script as script
-    from scriptutils.userinput import WPFWindow
+    from scriptutils.userinput import WPFWindow, alert
     my_config = script.config
+
+import objects_on_level_defaults as cdef
 
 class LevelDependenceConfigWindow(WPFWindow):
     def __init__(self, xaml_file_name):
-        WPFWindow.__init__(self, xaml_file_name)
 
+        WPFWindow.__init__(self, xaml_file_name)
         try:
             self.limit.Text = str(my_config.limit)
         except:
-            self.limit.Text = my_config.limit = "50"
+            self.restore_defaults("limit")
 
         try:
-            self.exceptions.Text = str(my_config.exceptions)
+            self.exceptions.Text = cdef.exceptions2str(my_config.exceptions)
         except:
-            pass
+            self.restore_defaults("exceptions")
 
-        script.save_config()
+
+    def restore_defaults(self, p1, p2, *args):
+        if len(args) == 0 or "limit" in args:
+            self.limit.Text = str(cdef.limit)
+
+        if len(args) == 0 or "exceptions" in args:
+            self.exceptions.Text = cdef.exceptions2str(cdef.exceptions)
 
     # noinspection PyUnusedLocal
     # noinspection PyMethodMayBeStatic
     def save_options(self, sender, args):
-        my_config.exceptions = self.exceptions.Text
-        my_config.limit = self.limit.Text
+        errors = []
+        try:
+            my_config.exceptions = cdef.exceptions2list(self.exceptions.Text)
+        except:
+            errors.append("Exceptions value is invalid")
 
-        script.save_config()
-        self.Close()
+        try:
+            my_config.limit = int(self.limit.Text)
+        except:
+            errors.append("Limit value should be either zero or a positive integer")
+
+        if errors:
+            alert("Can't save config.\n" + "\n".join(errors))
+            return
+        else:
+            script.save_config()
+            self.Close()
 
     def NumberValidationTextBox(self, sender, e):
         try:
@@ -51,4 +71,4 @@ class LevelDependenceConfigWindow(WPFWindow):
 
 
 if __name__ == '__main__':
-    LevelDependenceConfigWindow('ObjectsOnLevel.xaml').ShowDialog()
+    LevelDependenceConfigWindow('ObjectsOnLevelConfig.xaml').ShowDialog()

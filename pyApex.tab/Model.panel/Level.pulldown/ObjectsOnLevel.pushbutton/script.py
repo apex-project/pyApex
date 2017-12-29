@@ -8,7 +8,6 @@ Context: You can either activate a Plan View, select Plan Views in project brows
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#objects-on-level"
 
-import os
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
@@ -38,43 +37,32 @@ else:
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 
-import iter_selection
-#
-# config_defaults = objects_on_level_defaults.configDefaults()
-# print(config_defaults)
+import objects_on_level_defaults as config_defaults
 
 def get_config_exceptions():
     try:
-        conf = my_config.exceptions
-
+        v = my_config.exceptions
     except:
-        import os
-        config_default_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                           "ignore_types_default.txt")
-        try:
-            with open(config_default_path) as f:
-                conf = f.readline()
-        except:
-            exceptions = []
+        import objects_on_level_defaults as cdef
+        v = cdef.exceptions
 
-        my_config.exceptions = conf
+        my_config.exceptions = v
         script.save_config()
 
-    if conf:
-        exceptions = conf.split(",")
-        exceptions = map(lambda x: x.strip(), exceptions)
-        return exceptions
+    return v
 
 
 def get_config_limit():
     try:
-        conf = int(my_config.limit)
+        v = my_config.limit
     except:
-        conf = 50
-        script.config.limit = conf
+        import objects_on_level_defaults as cdef
+        v = cdef.limit
+
+        my_config.limit = v
         script.save_config()
 
-    return conf
+    return v
 
 
 class CheckBoxLevel:

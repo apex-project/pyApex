@@ -1,4 +1,0 @@
-Levels
-Work Plane Grid
-Viewports
-Other
