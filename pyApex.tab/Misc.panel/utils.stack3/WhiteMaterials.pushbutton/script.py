@@ -37,8 +37,6 @@ from datetime import datetime
 import re
 import pickle as pl
 
-data_dir = "D:\\"
-
 
 def config_ignore_transparent():
     try:
@@ -68,17 +66,15 @@ def config_exceptions():
     return v
 
 
-doc_title = doc.Title
-
-data_full_path = os.path.join(data_dir, doc_title + ".tmp")
-
 def backup_datafile(f):
     try:
         _new_path, ext = os.path.splitext(f)
         new_path = _new_path + datetime.now().strftime("_%y%m%d_%H-%M-%S") + ext
         os.rename(f, new_path)
+        logger.debug("Datafile backed up to %s" % new_path)
     except Exception as e:
-        print("Error renaming datafile\n" + str(e))
+        logger.error("Error renaming datafile\n" + str(e))
+
 
 def change_materials(reverse=False, datafile=None, limit=None):
     mat_dict = {}
@@ -88,14 +84,14 @@ def change_materials(reverse=False, datafile=None, limit=None):
     ignore_transparent = config_ignore_transparent()
 
     if os.path.exists(datafile):
-        print("Datafile found %s already exists" % datafile)
+        logger.debug("Datafile found %s" % datafile)
         if reverse == False:
-            print("New materials will be added")
+            logger.debug("New materials will be added")
         f = open(datafile, 'r')
         mat_dict = pl.load(f)
         f.close()
     else:
-        print("New datafile %s" % datafile)
+        logger.debug("New datafile %s" % datafile)
 
     cl = FilteredElementCollector(doc)
     mats = list(cl.OfCategory(BuiltInCategory.OST_Materials).WhereElementIsNotElementType().ToElements())
@@ -103,13 +99,13 @@ def change_materials(reverse=False, datafile=None, limit=None):
     try:
         white_mat = filter(lambda x: x.Name == white_material_name, mats)[0]
     except Exception as e:
-        print("Material '%s' not found" % white_material_name)
-        print(e)
+        logger.error("Material '%s' not found" % white_material_name)
+        logger.error(e)
         return
 
     white_mat_a = white_mat.AppearanceAssetId
 
-    print("White material: %s\nAssetId: %d" % (white_material_name, white_mat_a.IntegerValue))
+    logger.info("White material: %s\nAssetId: %d" % (white_material_name, white_mat_a.IntegerValue))
 
     t = Transaction(doc)
     t.Start(__title__ + (" reverse" if reverse else ""))
@@ -126,11 +122,11 @@ def change_materials(reverse=False, datafile=None, limit=None):
                 break
 
         if m_name_ignore:
-            print("%s - ignore name" % m_name)
+            logger.info("%s - ignore name" % m_name)
             continue
 
         if m.Transparency != 0 and ignore_transparent:
-            print("%s - ignore transparency" % m_name)
+            logger.info("%s - ignore transparency" % m_name)
             continue
 
         m_id = m.Id.IntegerValue
@@ -140,17 +136,17 @@ def change_materials(reverse=False, datafile=None, limit=None):
             if a_id != white_mat_a.IntegerValue:
                 mat_dict[m_id] = a_id
                 m.AppearanceAssetId = white_mat_a
-                print("%s (%d, asset %d) changed to white" % (m_name, m_id, a_id))
+                logger.info("%s (%d, asset %d) changed to white" % (m_name, m_id, a_id))
             else:
-                print("%s (%d) wasn't change" % (m_name, m_id))
+                logger.info("%s (%d) wasn't change" % (m_name, m_id))
         else:
             try:
                 _id = mat_dict[m_id]
                 m.AppearanceAssetId = ElementId(_id)
 
-                print("%s (%d) changed to %d" % (m_name, m_id, _id))
+                logger.info("%s (%d) changed to %d" % (m_name, m_id, _id))
             except:
-                print("%s (%d) not found or wasn't change" % (m_name, m_id))
+                logger.info("%s (%d) not found or wasn't change" % (m_name, m_id))
 
     t.Commit()
     if reverse == False:
@@ -159,12 +155,13 @@ def change_materials(reverse=False, datafile=None, limit=None):
         f.close()
     else:
         backup_datafile(datafile)
+    print("Completed")
 
 
 def main():
     if __forceddebugmode__:
         limit = 10
-        print("limit %d" % limit)
+        logger.debug("limit %d" % limit)
     else:
         limit = None
 
@@ -185,6 +182,5 @@ def main():
 
     change_materials(reverse, datafile=datafile, limit=limit)
 
-
-
-main()
+if __name__ == '__main__':
+    main()
