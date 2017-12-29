@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
 except:
@@ -18,8 +19,9 @@ else:
     my_config = script.config
 
 import objects_on_level_defaults as cdef
+import pyapex_utils as pau
 
-class LevelDependenceConfigWindow(WPFWindow):
+class ObjectsOnLevelConfigWindow(WPFWindow):
     def __init__(self, xaml_file_name):
 
         WPFWindow.__init__(self, xaml_file_name)
@@ -29,7 +31,7 @@ class LevelDependenceConfigWindow(WPFWindow):
             self.restore_defaults("limit")
 
         try:
-            self.exceptions.Text = cdef.exceptions2str(my_config.exceptions)
+            self.exceptions.Text = pau.list2str(my_config.exceptions)
         except:
             self.restore_defaults("exceptions")
 
@@ -39,19 +41,21 @@ class LevelDependenceConfigWindow(WPFWindow):
             self.limit.Text = str(cdef.limit)
 
         if len(args) == 0 or "exceptions" in args:
-            self.exceptions.Text = cdef.exceptions2str(cdef.exceptions)
+            self.exceptions.Text = pau.list2str(cdef.exceptions)
 
     # noinspection PyUnusedLocal
     # noinspection PyMethodMayBeStatic
     def save_options(self, sender, args):
         errors = []
         try:
-            my_config.exceptions = cdef.exceptions2list(self.exceptions.Text)
+            my_config.exceptions = pau.str2list(self.exceptions.Text)
         except:
             errors.append("Exceptions value is invalid")
 
         try:
-            my_config.limit = int(self.limit.Text)
+            v = int(self.limit.Text)
+            assert v >= 0
+            my_config.limit = v
         except:
             errors.append("Limit value should be either zero or a positive integer")
 
@@ -71,4 +75,4 @@ class LevelDependenceConfigWindow(WPFWindow):
 
 
 if __name__ == '__main__':
-    LevelDependenceConfigWindow('ObjectsOnLevelConfig.xaml').ShowDialog()
+    ObjectsOnLevelConfigWindow('ObjectsOnLevelConfig.xaml').ShowDialog()
