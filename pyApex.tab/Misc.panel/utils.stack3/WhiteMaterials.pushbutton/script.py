@@ -71,34 +71,31 @@ def config_exceptions():
 doc_title = doc.Title
 
 data_full_path = os.path.join(data_dir, doc_title + ".tmp")
-_new_path, ext = os.path.splitext(data_full_path)
-new_path = _new_path + datetime.now().strftime("_%y%m%d_%H-%M-%S") + ext
+
+def backup_datafile(f):
+    try:
+        _new_path, ext = os.path.splitext(f)
+        new_path = _new_path + datetime.now().strftime("_%y%m%d_%H-%M-%S") + ext
+        os.rename(f, new_path)
+    except Exception as e:
+        print("Error renaming datafile\n" + str(e))
 
 def change_materials(reverse=False, datafile=None, limit=None):
     mat_dict = {}
-    mat_list = []
+
     white_material_name = config_material()
     materials_exceptions = config_exceptions()
     ignore_transparent = config_ignore_transparent()
 
-    if reverse == True:
-        with open(data_full_path, "r") as f:
-            lines = f.readlines()
-        for l in lines:
-            m_id, a_id = l.split(",")
-            mat_dict[m_id] = a_id
-
+    if os.path.exists(datafile):
+        print("Datafile found %s already exists" % datafile)
+        if reverse == False:
+            print("New materials will be added")
+        f = open(datafile, 'r')
+        mat_dict = pl.load(f)
+        f.close()
     else:
-        if os.path.exists(data_full_path):
-            print("%s already exists, it will be renamed" % data_full_path)
-
-            try:
-                os.rename(data_full_path, new_path)
-            except Exception as e:
-                print("Error renaming\n" + str(e))
-                return
-
-    selection = uidoc.Selection.GetElementIds()
+        print("New datafile %s" % datafile)
 
     cl = FilteredElementCollector(doc)
     mats = list(cl.OfCategory(BuiltInCategory.OST_Materials).WhereElementIsNotElementType().ToElements())
@@ -136,29 +133,32 @@ def change_materials(reverse=False, datafile=None, limit=None):
             print("%s - ignore transparency" % m_name)
             continue
 
-        m_id = m.Id
-        a_id = m.AppearanceAssetId
+        m_id = m.Id.IntegerValue
+        a_id = m.AppearanceAssetId.IntegerValue
 
         if reverse == False:
-            mat_list.append("%d,%d" % (m_id.IntegerValue, a_id.IntegerValue,))
-            m.AppearanceAssetId = white_mat_a
-            print("%s (%d, asset %d) changed to white" % (m_name, m_id.IntegerValue, a_id.IntegerValue))
+            if a_id != white_mat_a.IntegerValue:
+                mat_dict[m_id] = a_id
+                m.AppearanceAssetId = white_mat_a
+                print("%s (%d, asset %d) changed to white" % (m_name, m_id, a_id))
+            else:
+                print("%s (%d) wasn't change" % (m_name, m_id))
         else:
-            _id = int(mat_dict[str(m_id.IntegerValue)])
-            m.AppearanceAssetId = ElementId(_id)
+            try:
+                _id = mat_dict[m_id]
+                m.AppearanceAssetId = ElementId(_id)
 
-            print("%s (%d) changed to %d" % (m_name, m_id.IntegerValue, _id))
+                print("%s (%d) changed to %d" % (m_name, m_id, _id))
+            except:
+                print("%s (%d) not found or wasn't change" % (m_name, m_id))
 
     t.Commit()
     if reverse == False:
-        with open(data_full_path, "w") as f:
-            for item in mat_list:
-                f.write("%s\n" % item)
+        f = open(datafile, 'w')
+        pl.dump(mat_dict, f)
+        f.close()
     else:
-        try:
-            os.rename(data_full_path, new_path)
-        except Exception as e:
-            print("Error renaming\n" + str(e))
+        backup_datafile(datafile)
 
 
 def main():
@@ -170,7 +170,11 @@ def main():
 
     reverse = False
 
-    datafile = script.get_document_data_file(0, "pym")
+    x,file_name = os.path.split(doc.PathName)
+    file_id, x = os.path.splitext(file_name)
+    if len(file_id) == 0:
+        file_id = doc.Title
+    datafile = script.get_data_file(file_id, "pym")
 
     if os.path.exists(datafile):
         options = ["Make White", "Reverse"]
