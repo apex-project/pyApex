@@ -28,15 +28,15 @@ class ObjectsOnLevelConfigWindow(WPFWindow):
         try:
             self.limit.Text = str(my_config.limit)
         except:
-            self.restore_defaults("limit")
+            self.restore_defaults(None,None,"limit")
 
         try:
             self.exceptions.Text = pau.list2str(my_config.exceptions)
         except:
-            self.restore_defaults("exceptions")
+            self.restore_defaults(None,None,"exceptions")
 
 
-    def restore_defaults(self, p1, p2, *args):
+    def restore_defaults(self, p1=None, p2=None, *args):
         if len(args) == 0 or "limit" in args:
             self.limit.Text = str(cdef.limit)
 

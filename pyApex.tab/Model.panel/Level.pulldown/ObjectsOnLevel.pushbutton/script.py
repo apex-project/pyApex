@@ -37,9 +37,8 @@ else:
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 
-import objects_on_level_defaults as config_defaults
 
-def get_config_exceptions():
+def config_exceptions():
     try:
         v = my_config.exceptions
     except:
@@ -52,7 +51,7 @@ def get_config_exceptions():
     return v
 
 
-def get_config_limit():
+def config_limit():
     try:
         v = my_config.limit
     except:
@@ -148,8 +147,8 @@ def starting_view():
 
 
 def main():
-    ignore_types = get_config_exceptions()
-    limit = get_config_limit()
+    ignore_types = config_exceptions()
+    limit = config_limit()
 
     levels_all = all_levels()
     if len(levels_all) < 2:
