@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*- 
-''
+__doc__ = """Create DWG link and orient it to Shared Site Point. As if this DWG had shared coordinates.
+Useful for placing General Plan dwg files with absolute coordinates.
+
+Создает DWG связь и размещает ее в Точке Съемки проекта. Как если бы dwg имел общие координаты с моделью.
+Удобно при создании связи с dwg-файлами генплана.
+"""
+
 __title__ = 'Link DWG by Site'
 
 import clr

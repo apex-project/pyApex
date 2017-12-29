@@ -51,4 +51,4 @@ class LevelDependenceConfigWindow(WPFWindow):
 
 
 if __name__ == '__main__':
-    LevelDependenceConfigWindow('LevelDependenceConfig.xaml').ShowDialog()
+    LevelDependenceConfigWindow('ObjectsOnLevel.xaml').ShowDialog()

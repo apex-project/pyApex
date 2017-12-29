@@ -1,1 +1,4 @@
-Levels,Work Plane Grid,Work Plane Grid,Viewports,Other
+Levels
+Work Plane Grid
+Viewports
+Other

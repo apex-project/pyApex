@@ -1,0 +1,22 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Options for White Materials" MinHeight="300" Height="300" MinWidth="300" MaxWidth="600" Width="300" ShowInTaskbar="True" ResizeMode="CanResizeWithGrip"
+        WindowStartupLocation="CenterScreen" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalContentAlignment="Center">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <Label x:Name="label1" Grid.Row="0">
+            <TextBlock TextWrapping="WrapWithOverflow">
+                        List of materials exceptions<LineBreak/>
+                        (one material name per line)
+            </TextBlock>
+        </Label>
+        <TextBox x:Name="exceptions" HorizontalAlignment="Stretch" Grid.Row="1" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Stretch"/>
+
+
+        <Button Grid.Row="3" Grid.ColumnSpan="5" Margin="0,15,0,0" Click="save_options" Content="Save options" />
+    </Grid>
+</Window>

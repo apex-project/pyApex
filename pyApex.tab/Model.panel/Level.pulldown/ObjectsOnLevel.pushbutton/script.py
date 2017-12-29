@@ -8,6 +8,8 @@ Context: You can either activate a Plan View, select Plan Views in project brows
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#objects-on-level"
 
+import os
+
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
 except:
@@ -25,6 +27,7 @@ if pyRevitNewer44:
     linkify = output.linkify
     selection = revit.get_selection()
     my_config = script.get_config()
+
 else:
     from scriptutils import logger, this_script as script
     from revitutils import doc, selection, uidoc
@@ -35,6 +38,10 @@ else:
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 
+import iter_selection
+#
+# config_defaults = objects_on_level_defaults.configDefaults()
+# print(config_defaults)
 
 def get_config_exceptions():
     try:
