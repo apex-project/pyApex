@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
 except:
@@ -9,32 +10,71 @@ pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 if pyRevitNewer44:
     from pyrevit import script
-    from pyrevit.forms import WPFWindow
+    from pyrevit.forms import WPFWindow, alert
 
     my_config = script.get_config()
 else:
     from scriptutils import this_script as script
-    from scriptutils.userinput import WPFWindow
+    from scriptutils.userinput import WPFWindow, alert
     my_config = script.config
+
+import white_materials_defaults as cdef
+import pyapex_utils as pau
 
 class WhiteMaterialsConfigWindow(WPFWindow):
     def __init__(self, xaml_file_name):
+
         WPFWindow.__init__(self, xaml_file_name)
+        try:
+            self.exceptions.Text = pau.list2str(my_config.exceptions)
+        except:
+            self.restore_defaults(None,None,"exceptions")
 
         try:
-            self.exceptions.Text = str(my_config.exceptions)
+            self.material.Text = pau.list2str(my_config.material)
         except:
-            pass
+            self.restore_defaults(None,None,"material")
 
-        script.save_config()
+        try:
+            self.ignore_transparent.IsChecked = bool(my_config.ignore_transparent)
+        except:
+            self.restore_defaults(None,None,"ignore_transparent")
+
+    def restore_defaults(self, p1=None, p2=None, *args):
+        if len(args) == 0 or "exceptions" in args:
+            self.exceptions.Text = pau.list2str(cdef.exceptions)
+        if len(args) == 0 or "material" in args:
+            self.material.Text = pau.list2str(cdef.material)
+        if len(args) == 0 or "ignore_transparent" in args:
+            self.ignore_transparent.IsChecked = bool(cdef.ignore_transparent)
 
     # noinspection PyUnusedLocal
     # noinspection PyMethodMayBeStatic
     def save_options(self, sender, args):
-        my_config.exceptions = self.exceptions.Text
+        errors = []
+        try:
+            my_config.exceptions = pau.str2list(self.exceptions.Text)
+        except:
+            errors.append("Exceptions value is invalid")
 
-        script.save_config()
-        self.Close()
+        try:
+            v = self.material.Text
+            assert len(v) >= 0
+            my_config.material = v
+        except:
+            errors.append("Material name is invalid")
+
+        try:
+            my_config.ignore_transparent = bool(self.ignore_transparent.IsChecked)
+        except:
+            errors.append("Ignore transparent value is invalid")
+
+        if errors:
+            alert("Can't save config.\n" + "\n".join(errors))
+            return
+        else:
+            script.save_config()
+            self.Close()
 
 
 if __name__ == '__main__':
