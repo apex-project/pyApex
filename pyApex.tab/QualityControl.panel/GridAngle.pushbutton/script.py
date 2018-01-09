@@ -2,20 +2,29 @@
 
 __doc__ = 'Check angles between grids'
 __title__ = 'Grid Angles'
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+    pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+    pyRevitNewer44 = True
 
-from pyrevit.versionmgr import PYREVIT_VERSION
-pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 import math
 import itertools
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
+from Autodesk.Revit.DB import *
+from Autodesk.Revit.DB.Architecture import *
 
 if pyRevitNewer44:
     from pyrevit import script, revit, DB, UI
     logger = script.get_logger()
+    output = script.get_output()
     linkify = output.linkify
     selection = revit.get_selection()
-    uidoc = revit.doc
-    doc = revit.uidoc
+    doc = revit.doc
+    uidoc = revit.uidoc
 
 else:
     from scriptutils import logger
