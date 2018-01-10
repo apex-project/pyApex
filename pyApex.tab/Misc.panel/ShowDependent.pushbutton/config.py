@@ -18,10 +18,10 @@ else:
     from scriptutils.userinput import WPFWindow, alert
     my_config = script.config
 
-import show_dependencies_defaults as cdef
+import show_dependent_defaults as cdef
 import pyapex_utils as pau
 
-class ShowDependenciesConfigWindow(WPFWindow):
+class ShowDependentConfigWindow(WPFWindow):
     def __init__(self, xaml_file_name):
 
         WPFWindow.__init__(self, xaml_file_name)
@@ -75,4 +75,4 @@ class ShowDependenciesConfigWindow(WPFWindow):
 
 
 if __name__ == '__main__':
-    ShowDependenciesConfigWindow('ShowDependenciesConfig.xaml').ShowDialog()
+    ShowDependentConfigWindow('ShowDependentConfig.xaml').ShowDialog()

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-__title__ = 'Show Dependencies'
+__title__ = 'Show\nDependent'
 __doc__ = """List elements dependent on selected levels. To setup exceptions and limit run with Shift-click.
 Context: You can either activate a Plan View, select Plan Views in project browser or select Levels on a section. If nothing selected, you'll be able to choise levels from a list.
 
 Выдает список элементов, зависимых от выбранных видов. Для настроек исключения и ограничения кол-ва элементов, которые выводятся в списке, запустите с зажатым Shift
 Контекст: Можно либо активировать План, либо выбрать Планы в Браузере проекта, либо выбрать уровни на разрезе или фасаде. Если ничего не выбрано, вам будет предложено выбрать уровнь из списка."""
 
-__helpurl__ = "https://apex-project.github.io/pyApex/help#objects-on-level"
+__helpurl__ = "https://apex-project.github.io/pyApex/help#show-dependent"
 
 
 try:
@@ -42,7 +42,7 @@ def config_exceptions():
     try:
         v = my_config.exceptions
     except:
-        import show_dependencies_defaults as cdef
+        import show_dependent_defaults as cdef
         v = cdef.exceptions
 
         my_config.exceptions = v
@@ -55,7 +55,7 @@ def config_limit():
     try:
         v = my_config.limit
     except:
-        import show_dependencies_defaults as cdef
+        import show_dependent_defaults as cdef
         v = cdef.limit
 
         my_config.limit = v
@@ -64,10 +64,14 @@ def config_limit():
     return v
 
 
-class CheckBoxLevel:
-    def __init__(self, level, default_state=False):
-        self.level = level
-        self.name = level.Name
+class CheckBox:
+    def __init__(self, element, name=None, default_state=False):
+        self.element = element
+
+        if name:
+            self.name = name
+        else:
+            self.name = element.Name
         self.state = default_state
 
     def __str__(self):
@@ -86,19 +90,26 @@ def all_levels():
     return all
 
 
-def select_levels_dialog(levels_all):
+def all_worksets():
+    cl = FilteredWorksetCollector(doc)
+    all = cl.OfKind(WorksetKind.UserWorkset)
+    all_sorted = sorted(all, key=lambda l:l.Name)
+    return all_sorted
+
+
+def select_levels_dialog(elements_all, name = "parent object"):
     options = []
 
-    for l in levels_all:
-        cb = CheckBoxLevel(l)
+    for e in elements_all:
+        cb = CheckBox(e, e.Name.replace("_","__"))
         options.append(cb)
 
-    selected = SelectFromCheckBoxes.show(options, title='Select level to check', width=300,
+    selected = SelectFromCheckBoxes.show(options, title='Select %s to check' % name, width=300,
                                          button_name='Select')
     if not selected:
         return
 
-    return [c.level for c in selected if c.state is True]
+    return [c.element for c in selected if c.state is True]
 
 
 # filter
@@ -146,14 +157,36 @@ def starting_view():
     return startingView
 
 
-def level_dependencies():
-    """By level"""
+def group_by_type(elements_ids):
     ignore_types = config_exceptions()
-    limit = config_limit()
 
+    result_dict = {}
+
+    for e_id in elements_ids:
+        e = doc.GetElement(e_id)
+        if not e:
+            continue
+
+        try:
+            el_type = e.Category.Name
+        except:
+            el_type = "Other"
+
+        if el_type in ignore_types:
+            continue
+
+        if el_type not in result_dict:
+            result_dict[el_type] = []
+        result_dict[el_type].append(e_id)
+
+    return result_dict
+
+
+def level_dependent():
+    """By level"""
     levels_all = all_levels()
     if len(levels_all) < 2:
-        print("At least 2 levels should be created in a project to check dependencies. Create one more level and run again")
+        print("At least 2 levels should be created in a project to check dependent. Create one more level and run again")
         return
 
     selected_levels = get_levels_from_selection(selection.elements)
@@ -188,29 +221,27 @@ def level_dependencies():
         elements = doc.Delete(e.Id)
         t.RollBack()
 
-        ignored = 0
-        result_dict = {}
+        results[e.Name] = group_by_type(elements)
 
-        for e_del_id in elements:
-            e_del = doc.GetElement(e_del_id)
-            if not e_del:
-                ignored += 1
-                continue
+    return results
 
-            try:
-                el_type = e_del.Category.Name
-            except:
-                el_type = "Other"
 
-            if el_type in ignore_types:
-                ignored += 1
-                continue
+def workset_dependent():
+    """By workset"""
 
-            if el_type not in result_dict:
-                result_dict[el_type] = []
-            result_dict[el_type].append(e_del_id)
+    selected_worksets = select_levels_dialog(all_worksets())
+    if not selected_worksets:
+        print("Nothing selected")
+        return
 
-        results[e.Name] = result_dict
+    results = {}
+
+    for ws in selected_worksets:
+        elementCollector = FilteredElementCollector(doc)
+        elementWorksetFilter = ElementWorksetFilter(ws.Id, False)
+        element_ids = elementCollector.WherePasses(elementWorksetFilter).ToElementIds()
+
+        results[ws.Name] = group_by_type(element_ids)
 
     return results
 
@@ -269,12 +300,6 @@ def print_elements_for_parent(result_dict, parent_name):
         else:
             print('%d elements on %s' % (len(e_ids), parent_name))
 
-        element_ids_str = map(lambda x: str(x.IntegerValue), ids_limited)
-        limited_suffix = ""
-        if limited_count:
-            limited_suffix = " +%d more elements above limit..." % (limited_count)
-
-        print("\n\t"  + ",".join(element_ids_str) + limited_suffix)
     print("\n\n\n")
 
 
@@ -282,11 +307,18 @@ def print_elements(data):
     for parent_name, result_dict in data.items():
         print_elements_for_parent(result_dict, parent_name)
 
+
 def method_switch():
     available_methods = [
-        level_dependencies
+        level_dependent
     ]
-    available_methods_dict = dict((f.__doc__, f) for f in available_methods)
+    if doc.IsWorkshared:
+        available_methods.append(workset_dependent)
+
+    available_methods_dict = dict(
+        (f.__doc__.split("\n")[0], f)
+        for f in available_methods
+    )
 
     selected_switch = CommandSwitchWindow.show(available_methods_dict.keys(),
                                                message='Select method')
@@ -298,7 +330,10 @@ def main():
     if not func:
         return
     data = func()
+    if not data:
+        return
     print_elements(data)
+
 
 if __name__ == '__main__':
     main()

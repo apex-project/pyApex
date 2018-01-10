@@ -6,6 +6,10 @@ exceptions = [
     "Viewports",
     "Other",
     "Sun Path",
+    "Automatic Sketch Dimensions",
+    "<Sketch>",
+    "<Area Boundary>",
+    "Constraints",
 ]
 
 limit = 10
