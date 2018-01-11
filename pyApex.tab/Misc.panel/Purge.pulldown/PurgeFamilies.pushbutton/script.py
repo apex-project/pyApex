@@ -3,11 +3,9 @@
 __title__ = 'Purge\nfamilies'
 __doc__ = """Opens each family in active document, then delete unused elements and load back to source document.
 Works recursively until the lowest level of embeded families.
-Click+Shift - check only the highest embeded level
 
 Открывает каждое семейство в модели, удаляет неиспользуемые элементы и загружает обратно в модель.
 Работает рекурсивно, опускаясь до самого глубокого уровня вложенных семейств.
-Click+Shift  - проверять только верхний уровень вложенности
 
 Available cleaners:
 - families
@@ -35,12 +33,26 @@ if pyRevitNewer44:
     logger = script.get_logger()
     linkify = output.linkify
     selection = revit.get_selection()
-
+    my_config = script.get_config()
 else:
     from scriptutils import logger, this_script as script
     from revitutils import doc, selection
     from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
     output = script.output
+    my_config = script.config
+
+
+def config_temp_dir():
+    try:
+        v = my_config.temp_dir
+    except:
+        import purge_families_defaults as cdef
+        v = cdef.temp_dir
+
+        my_config.temp_dir = v
+        script.save_config()
+
+    return v
 
 window_title = __title__.replace("\n", " ")
 output.set_title(window_title)
@@ -56,13 +68,13 @@ import math
 from pprint import pprint
 from datetime import datetime
 
-from Autodesk.Revit.UI import PostableCommand,TaskDialog, TaskDialogCommonButtons
+from Autodesk.Revit.UI import PostableCommand, TaskDialog, TaskDialogCommonButtons
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB.Architecture import *
 
 
 PURGE_NOTUSED_FAMILIES = False
-PURGE_DIR = "D:\\99_PURGE"
+PURGE_DIR = config_temp_dir()
 
 # Set windows locale. Locale is used for put necessary decimal separator in CSV
 locale.setlocale(locale.LC_ALL, '')
@@ -924,7 +936,7 @@ def main():
         if doc.Title[-4:] == ".rfa":
             level = 1
 
-        if __shiftclick__:
+        if __forceddebugmode__ :
             max_level = 1
 
         START_TIME = time.time()

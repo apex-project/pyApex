@@ -1,0 +1,21 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Options for Purge Families" MinHeight="230" Height="230" MaxHeight="220" MinWidth="400" MaxWidth="1000" Width="400" ShowInTaskbar="True" ResizeMode="CanResizeWithGrip"
+        WindowStartupLocation="CenterScreen" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalContentAlignment="Center">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+
+        <Label x:Name="label2" Content="Pick folder to save families backup files and report"  Grid.Row="0"/>
+        <TextBox x:Name="temp_dir" Height="23" HorizontalAlignment="Stretch" Grid.Row="1" />
+        <Button Grid.Row="2" Margin="0,10,0,0" Click="pick" Content="Pick folder" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150"  Height="22"/>
+        <Button Grid.Row="3" Margin="0,10,0,0" Click="restore_defaults" Content="Defaults" HorizontalAlignment="Right" Width="100"/>
+        <Button Grid.Row="4" Margin="0,10,0,0" Click="save_options" Content="Save options" />
+
+    </Grid>
+</Window>
