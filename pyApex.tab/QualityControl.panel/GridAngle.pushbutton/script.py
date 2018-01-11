@@ -2,6 +2,7 @@
 
 __doc__ = 'Check angles between grids'
 __title__ = 'Grid Angles'
+
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
     pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
@@ -10,15 +11,8 @@ except:
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
     pyRevitNewer44 = True
 
-
-import math
-import itertools
-from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
-from Autodesk.Revit.DB import *
-from Autodesk.Revit.DB.Architecture import *
-
 if pyRevitNewer44:
-    from pyrevit import script, revit, DB, UI
+    from pyrevit import script, revit
     logger = script.get_logger()
     output = script.get_output()
     linkify = output.linkify
@@ -28,11 +22,16 @@ if pyRevitNewer44:
 
 else:
     from scriptutils import logger
-    from Autodesk.Revit import DB, UI
     from scriptutils import this_script
     linkify = this_script.output.linkify
     uidoc = __revit__.ActiveUIDocument
     doc = uidoc.Document
+
+import math
+import itertools
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
+from Autodesk.Revit.DB import *
+from Autodesk.Revit.DB.Architecture import *
 
 
 def get_grids(view_id = None, ids=False):
@@ -261,7 +260,6 @@ def run(interactive=False):
         override_red = OverrideGraphicSettings().SetProjectionLineColor(Color(255,0,0)) \
             .SetProjectionLineWeight(6)
 
-
         t = Transaction(doc)
         t.Start("Override graphics")
 
@@ -281,4 +279,5 @@ def run(interactive=False):
     if len(ids_bad_to_override) == 0:
         TaskDialog.Show(__title__, "Check completed\n0 errors")
 
-run(interactive=True)
+if __name__ == '__main__':
+    run(interactive=True)

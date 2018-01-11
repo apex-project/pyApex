@@ -1,25 +1,38 @@
 # -*- coding: utf-8 -*- 
 __doc__ = 'Pin links and check worksets.\nCreates worksets if necessary'
-from System.Collections.Generic import List
-from Autodesk.Revit.DB import *
-from Autodesk.Revit.DB.Architecture import RoomTag
+__title__ = 'Links'
+
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+    pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+    pyRevitNewer44 = True
+
+if pyRevitNewer44:
+    from pyrevit import script, revit
+    logger = script.get_logger()
+    output = script.get_output()
+    linkify = output.linkify
+    selection = revit.get_selection()
+    doc = revit.doc
+    uidoc = revit.uidoc
+
+else:
+    from scriptutils import logger
+    from scriptutils import this_script
+    linkify = this_script.output.linkify
+    uidoc = __revit__.ActiveUIDocument
+    doc = uidoc.Document
+
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
-from scriptutils import logger
-import functools
-from scriptutils import this_script
-from pprint import pprint
+from Autodesk.Revit.DB import *
 import re
 import os
-from pprint import pprint
-
-app = __revit__.Application.Documents
-uidoc = __revit__.ActiveUIDocument
-doc = __revit__.ActiveUIDocument.Document
-selection = uidoc.Selection.GetElementIds()
 
 cl = FilteredElementCollector(doc).WhereElementIsElementType()
 selection = cl.OfCategory(BuiltInCategory.OST_RvtLinks).ToElementIds()
-
 
 def file2ws_name(filename):
     symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
@@ -215,9 +228,12 @@ def collect_links():
 
     return links
 
+def main():
+    links = collect_links()
+    if doc.IsWorkshared:
+        CheckWorkset(links).run()
+    CheckPinned(links).run()
+    CheckShared(links).run()
 
-links = collect_links()
-if doc.IsWorkshared:
-    CheckWorkset(links).run()
-CheckPinned(links).run()
-CheckShared(links).run()
+if __name__ == '__main__':
+    main()
