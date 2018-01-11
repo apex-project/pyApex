@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-PURGE_DIR = "D:\\99_PURGE"
 
-"""Opens each family in active document, then delete unused elements and load back to source document.
+__title__ = 'Purge\nfamilies'
+__doc__ = """Opens each family in active document, then delete unused elements and load back to source document.
 Works recursively until the lowest level of embeded families.
 Click+Shift - check only the highest embeded level
 
@@ -16,6 +16,34 @@ Available cleaners:
 - fill patterns
 - line patterns
 """
+
+__helpurl__ = "https://apex-project.github.io/pyApex/help#purge-families"
+
+try:
+    from pyrevit.versionmgr import PYREVIT_VERSION
+except:
+    from pyrevit import versionmgr
+    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+
+pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+
+if pyRevitNewer44:
+    from pyrevit import script, revit
+    from pyrevit.revit import doc
+    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+    output = script.get_output()
+    logger = script.get_logger()
+    linkify = output.linkify
+    selection = revit.get_selection()
+
+else:
+    from scriptutils import logger, this_script as script
+    from revitutils import doc, selection
+    from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
+    output = script.output
+
+window_title = __title__.replace("\n", " ")
+output.set_title(window_title)
 
 import csv
 import os
@@ -32,14 +60,9 @@ from Autodesk.Revit.UI import PostableCommand,TaskDialog, TaskDialogCommonButton
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.DB.Architecture import *
 
-from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
-from scriptutils import this_script
 
 PURGE_NOTUSED_FAMILIES = False
-__title__ = 'Purge\nrecursively'
-
-window_title = __title__.replace("\n", " ")
-this_script.output.set_title(window_title)
+PURGE_DIR = "D:\\99_PURGE"
 
 # Set windows locale. Locale is used for put necessary decimal separator in CSV
 locale.setlocale(locale.LC_ALL, '')
@@ -470,6 +493,7 @@ def write_csv(path, data=None, separator=";", encoding="windows-1251"):
     lines = []
 
     for l in data:
+        l = map(lambda x: str(x), l)
         ll = separator.join(l)
         lines.append(ll.encode(encoding, 'ignore'))
 
@@ -477,9 +501,6 @@ def write_csv(path, data=None, separator=";", encoding="windows-1251"):
         f.write('\n'.join(lines))
 
 
-app = __revit__.Application
-uidoc = __revit__.ActiveUIDocument
-doc = __revit__.ActiveUIDocument.Document
 
 
 def get_familysymbol_instances(doc, fi):
@@ -719,13 +740,13 @@ def process_purge(doc, purgers, parent=None, level=0, max_level=1, directory=Non
             # update stats - progress bar and window title
             if parent == None:
                 percent_done = float(fi) / families_in_use_len
-                this_script.output.update_progress(int(100 * percent_done), 100)
+                output.update_progress(int(100 * percent_done), 100)
                 if percent_done > 0.01:
                     time_left = time_elapsed() * ((1 / percent_done) - 1)
                     time_left_text = " - %s left - %.3f Mb purged" % (time_format(time_left), PURGE_SIZES_SUM)
                 else:
                     time_left_text = ""
-                this_script.output.set_title("%s - %d of %d finished%s" % (
+                output.set_title("%s - %d of %d finished%s" % (
                     window_title, fi, families_in_use_len, time_left_text))
 
             fam_doc = doc.EditFamily(f)
@@ -917,9 +938,9 @@ def main():
         PURGE_RESULTS_CSV.append(csv_line)
 
         process_purge(doc, selected_purgers, level=level, max_level=max_level, directory=directory)
-        this_script.output.set_title("%s - Write CSV" % (window_title,))
+        output.set_title("%s - Write CSV" % (window_title,))
         write_csv(directory)
-        this_script.output.set_title("%s - Done" % (window_title,))
+        output.set_title("%s - Done" % (window_title,))
 
         print("\n\nFinished")
         for r in PURGE_RESULTS.keys():
@@ -931,10 +952,10 @@ def main():
 
         print("\n\n--- %s ---" % (time_format(time_elapsed())))
 
-        this_script.output.update_progress(100, 100)
+        output.update_progress(100, 100)
 
     else:
         print("nothing selected")
 
-
-main()
+if __name__ == '__main__':
+    main()
