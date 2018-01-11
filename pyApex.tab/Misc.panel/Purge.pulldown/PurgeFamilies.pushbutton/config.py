@@ -15,8 +15,12 @@ if pyRevitNewer44:
     my_config = script.get_config()
 else:
     from scriptutils import this_script as script
-    from scriptutils.userinput import WPFWindow, alert, pick_folder
+    from scriptutils.userinput import WPFWindow, pick_folder
     my_config = script.config
+
+    from Autodesk.Revit.UI import TaskDialog
+    def alert(msg):
+        TaskDialog.Show('pyrevit', msg)
 
 import purge_families_defaults as cdef
 import pyapex_utils as pau
@@ -46,8 +50,10 @@ class PurgeFamiliesConfigWindow(WPFWindow):
 
             if not os.path.isdir(directory):
                 errors.append("Specified path is not a directory")
+            if len(errors) == 0:
+                my_config.temp_dir = pau.str2list(self.temp_dir.Text)
         except Exception as e:
-            errors.append("Specified path is invalid. Unknown error\n%s" % str(e))
+            errors.append("Specified path is invalid.\n%s" % str(e))
 
         if errors:
             alert("Can't save config.\n" + "\n".join(errors))
