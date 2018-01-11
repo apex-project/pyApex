@@ -32,6 +32,7 @@ else:
 
 from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory, ViewType, ElementId, AreaTag, FamilyInstance
 from Autodesk.Revit.DB.Architecture import RoomTag
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 
 from System.Collections.Generic import List
 
@@ -142,31 +143,6 @@ switches = {
 }
 
 
-# def select_tags_by_view(selected_switch):
-#     tags_by_view = {}
-#
-#     cat = switches[selected_switch]
-#
-#     cl_tags = FilteredElementCollector(doc)
-#     tags = cl_tags.OfCategory(cat)
-#
-#     # Find only current view tags, if not ShiftClick
-#     if not __shiftclick__:
-#         tags = tags.OwnedByView(doc.ActiveView.Id)
-#
-#     tags = tags.WhereElementIsNotElementType().ToElements()
-#
-#     logger.debug(str(len(tags)) + " tags found")
-#
-#     for e in tags:
-#         v = e.OwnerViewId
-#         if v not in tags_by_view.keys():
-#             tags_by_view[v] = []
-#         tags_by_view[v].append(e)
-#
-#     return tags_by_view
-
-
 def find_duplicates_on_view(tags, view_name):
     tags_dict = {}
 
@@ -232,7 +208,10 @@ def select_duplicate_tags(tags_by_view, selected_switch, all_views):
         collection = List[ElementId](duplicates_id)
         selection.SetElementIds(collection)
 
-    print("%d duplicated %s selected" % (len(duplicates_id), selected_switch))
+    if len(duplicates_id)>0:
+        print("%d duplicated %s selected" % (len(duplicates_id), selected_switch))
+    else:
+        print("No duplicated %s found" % (len(duplicates_id), selected_switch))
 
 
 def get_tags_by_type(all_views):
@@ -244,7 +223,7 @@ def get_tags_by_type(all_views):
         tags = cl_tags.OfCategory(cat)
 
         # Find only current view tags, if not ShiftClick
-        if not __shiftclick__:
+        if not all_views:
             tags = tags.OwnedByView(doc.ActiveView.Id)
 
         tags = tags.WhereElementIsNotElementType().ToElements()
@@ -277,14 +256,21 @@ def main(all_views = __shiftclick__):
     # fetching all tags in a project
     tags_by_type = get_tags_by_type(all_views)
     available_types = tags_by_type.keys()
-    if len(available_types) == 0:
-        if all_views:
-            suffix = 'in a project'
-        else:
-            suffix = 'on active view'
-            # TODO ask user to find on all views
 
-        print('No tags found ' + suffix)
+    if len(available_types) == 0:
+        text_pre = 'No tags were found '
+        if all_views:
+            text = text_pre + 'in a project'
+            TaskDialog.Show(__title__, text)
+        else:
+            text = text_pre + 'on active view.\nLet\'s try to find tags on all other views?'
+            res = TaskDialog.Show(__title__, text,
+                                  TaskDialogCommonButtons.Yes |
+                                  TaskDialogCommonButtons.No)
+
+            if str(res) == "Yes":
+                main(all_views=True)
+
         return
 
     selected_switch = CommandSwitchWindow.show(available_types,
