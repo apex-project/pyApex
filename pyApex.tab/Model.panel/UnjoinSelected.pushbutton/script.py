@@ -30,7 +30,7 @@ else:
 selected_ids = selection.element_ids
 
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, JoinGeometryUtils, Transaction
-from Autodesk.Revit.UI import TaskDialog,TaskDialogCommonButtons
+,TaskDialogCommonButtons
 
 rng = range(len(selected_ids))
 checked_pairs = []

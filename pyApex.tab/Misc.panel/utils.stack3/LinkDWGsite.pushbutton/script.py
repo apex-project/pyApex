@@ -94,7 +94,12 @@ def main():
 
     t = Transaction(doc)
     t.Start(__title__)
-    status, e_id = link_func(path, o, target_view, )
+    try:
+        status, e_id = link_func(path, o, target_view, )
+    except Exception as e:
+        logger.error("Unable to import DWG")
+        logger.error(e)
+        status = False
 
     if status:
         if rotate:
@@ -108,7 +113,7 @@ def main():
             l.Pinned = True
         t.Commit()
     else:
-        t.Reverse()
+        t.RollBack()
 
 if __name__ == '__main__':
     main()

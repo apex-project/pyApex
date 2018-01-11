@@ -15,8 +15,12 @@ if pyRevitNewer44:
     my_config = script.get_config()
 else:
     from scriptutils import this_script as script
-    from scriptutils.userinput import WPFWindow, alert
+    from scriptutils.userinput import WPFWindow
     my_config = script.config
+
+    from Autodesk.Revit.UI import TaskDialog
+    def alert(msg):
+        TaskDialog.Show('pyrevit', msg)
 
 import objects_on_level_defaults as cdef
 import pyapex_utils as pau

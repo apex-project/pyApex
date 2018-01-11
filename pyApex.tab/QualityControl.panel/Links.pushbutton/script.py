@@ -5,6 +5,7 @@ __title__ = 'Links'
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
     pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+
 except:
     from pyrevit import versionmgr
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
@@ -18,7 +19,6 @@ if pyRevitNewer44:
     selection = revit.get_selection()
     doc = revit.doc
     uidoc = revit.uidoc
-
 else:
     from scriptutils import logger
     from scriptutils import this_script
@@ -53,7 +53,7 @@ class Check(object):
 
         self.elements = elements
         self.errors = {}
-        self.fix_text = "Исправить ошибки?"
+        self.fix_text = "Fix these warnings?"
 
     def run(self):
         self.check_all()

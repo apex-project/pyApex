@@ -319,9 +319,12 @@ def method_switch():
         (f.__doc__.split("\n")[0], f)
         for f in available_methods
     )
-
-    selected_switch = CommandSwitchWindow.show(available_methods_dict.keys(),
-                                               message='Select method')
+    if pyRevitNewer44:
+        selected_switch = CommandSwitchWindow.show(available_methods_dict.keys(),
+                                                   message='Select method')
+    else:
+        selected_switch = CommandSwitchWindow(available_methods_dict.keys(),
+                                                   message='Select method').pick_cmd_switch()
     return available_methods_dict.get(selected_switch)
 
 

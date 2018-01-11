@@ -36,7 +36,7 @@ if pyRevitNewer44:
     my_config = script.get_config()
 
 else:
-    from scriptutils import logger
+    from scriptutils import logger, this_script as script
     from scriptutils.userinput import WPFWindow, pick_folder, pick_file, save_file
     from revitutils import doc, uidoc, selection
     my_config = script.config
@@ -146,7 +146,7 @@ def format_results(textnotes_dict):
     return result
 
 def write_csv(all_rows):
-    default_filename = "textnotes_%s" % doc.Title
+    default_filename = "textnotes_%s.csv" % doc.Title
 
     try:
         init_dir = my_config.init_dir

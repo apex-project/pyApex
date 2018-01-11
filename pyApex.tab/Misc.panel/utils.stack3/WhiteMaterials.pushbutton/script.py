@@ -174,10 +174,15 @@ def main():
     datafile = script.get_data_file(file_id, "pym")
 
     if os.path.exists(datafile):
-        options = ["Make White", "Reverse"]
-        selected_switch = CommandSwitchWindow.show(options,
-                                           message='Select direction')
-        if selected_switch == "Reverse":
+        options = ["Make White", "Revert original"]
+        if pyRevitNewer44:
+            selected_switch = CommandSwitchWindow.show(options,
+                                               message='Select direction')
+        else:
+            selected_switch = CommandSwitchWindow(options,
+                                                       message='Select direction').pick_cmd_switch()
+
+        if selected_switch == "Revert original":
             reverse = True
 
     change_materials(reverse, datafile=datafile, limit=limit)

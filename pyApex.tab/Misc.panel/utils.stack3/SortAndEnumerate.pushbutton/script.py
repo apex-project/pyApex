@@ -86,6 +86,18 @@ class EnumerateWindow(WPFWindow):
         self.read_config()
 
     def read_config(self):
+        # check are last parameters available
+        try:
+            if my_config.parameter_to_sort not in self.parameters_sortable:
+                my_config.parameter_to_sort = ""
+        except:
+            pass
+        try:
+            if my_config.parameter_to_set not in self.parameters_editable:
+                my_config.parameter_to_set = ""
+        except:
+            pass
+
         try:
             self.textFormat.Text = str(my_config.text_format)
         except:
@@ -120,6 +132,7 @@ class EnumerateWindow(WPFWindow):
             self.isReversed.IsChecked = my_config.is_reversed
         except:
             self.isReversed.IsChecked = my_config.is_reversed = False
+
         script.save_config()
 
     def write_config(self):
@@ -192,7 +205,6 @@ class EnumerateWindow(WPFWindow):
         t.Commit()
 
         my_config.start_from = i
-        script.save_config()
 
         self.write_config()
 

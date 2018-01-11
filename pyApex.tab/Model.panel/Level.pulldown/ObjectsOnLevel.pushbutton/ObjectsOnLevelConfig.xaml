@@ -22,7 +22,7 @@
 
         <Label x:Name="label2" Content="Limit of IDs to show (0 = unlimited)" Margin="0,5,0,0"  Grid.Row="2"/>
         <TextBox x:Name="limit" Height="23" Width="100" HorizontalAlignment="Left" TextWrapping="Wrap" Text="0"
-                 PreviewTextInput="NumberValidationTextBox" Grid.Row="3">
+                 PreviewTextInput="NumberValidationTextBox" Grid.Row="3" />
         <Button Grid.Row="4" Margin="0,10,0,0" Click="restore_defaults" Content="Defaults" HorizontalAlignment="Right" Width="100"/>
         <Button Grid.Row="5" Margin="0,10,0,0" Click="save_options" Content="Save options" />
 
