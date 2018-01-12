@@ -92,21 +92,7 @@ Remove selected level safely - transfer all dependent elements to another level.
 
 ### Objects on level
 
-###### EN
-
-List elements dependent on selected levels. To setup exceptions and limit run with Shift-click.
-
-> Context: You can either activate a Plan View, select Plan Views in project browser or select Levels on a section. If nothing selected, you'll be able to choise levels from a list.
-
-> How it works: Script tries to delete a level and looks for dependent elements.
-
-###### RU
-
-Выдает список элементов, зависимых от выбранных видов. Для настроек исключения и ограничения кол-ва элементов, которые выводятся в списке, запустите с зажатым Shift
-
-> Контекст: Можно либо активировать План, либо выбрать Планы в Браузере проекта, либо выбрать уровни на разрезе или фасаде. Если ничего не выбрано, вам будет предложено выбрать уровнь из списка.
-
-> Принцип работы: Скрипт пытается удалить уровнь, а затем определяет, какие элементы были затронуты
+Deprecated. Replaced with [Show Dependent](#show-dependent)
 
 ---
 
