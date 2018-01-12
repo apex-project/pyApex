@@ -13,7 +13,6 @@ Context: at least 2 objects must be selected
 __context__ = 'Selection'
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#sort-and-enumerate"
-__doc__ = 'Select many objects by IDs or error text'
 
 import operator
 

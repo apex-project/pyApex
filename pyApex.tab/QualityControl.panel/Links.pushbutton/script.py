@@ -1,7 +1,14 @@
 # -*- coding: utf-8 -*- 
-__doc__ = 'Pin links and check worksets.\nCreates worksets if necessary'
-__title__ = 'Links'
+__doc__ = """
+Checks are links pinned, shared site disabled and that link located on separated workset (started from 00_). 
+Fix these issues (except Shared site - should be fixed manually)
 
+Проверяет закреплены ли связи, отключена ли Общая площадка и находится ли связь на отдельном рабочем наборе (начинающемся с 00_)
+Исправляет эти ошибки (за исключением Общей площадки - нужно исправлять вручную)
+"""
+
+__title__ = 'Links'
+__helpurl__ = "https://apex-project.github.io/pyApex/help#links"
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
     pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5

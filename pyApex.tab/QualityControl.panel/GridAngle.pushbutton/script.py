@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-__doc__ = 'Check angles between grids'
-__title__ = 'Grid Angles'
+__doc__ = """Check angles between grids. Help to find not-accurately placed grids and outliers
 
+Позволяет найти отклонившиеся оси.
+"""
+__title__ = 'Grid Angles'
+__helpurl__ = "https://apex-project.github.io/pyApex/help#grid-angles"
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
     pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5

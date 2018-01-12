@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 __title__ = 'Flip\nGrid Ends'
-__doc__ = """"""
+__doc__ = """Flip visibility of bubbles at the ends of selected grids. If both bubbles were visible ony one lefts.
+
+Переключает отображения кружочков для выделенных осей. Если у оси были видимы оба кружочка, будет отображаться только один"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#flip-grid-ends"
 

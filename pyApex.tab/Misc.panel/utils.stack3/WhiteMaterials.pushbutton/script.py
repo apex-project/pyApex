@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*- 
 __doc__ = """Changes appearance of all project materials to 'white' and back. Useful for paper-like render.
-You can set default material in command config (run with Shift-click)
+You can set default material (White) and exceptions (Glass, Wood etc.) in command config (run with Shift-click)
 
 Изменяет отображение всех материалов в проекте на 'белый'. Удобно для создание 'бумажных' визуализаций.
+Для выбора имени материла по-умолчанию и настроек исключений (например, стекло или дерево), запустите с зажатым Shift
 """
 
 __title__ = 'White Materials'
-__helpurl__ = "https://apex-project.github.io/pyApex/help#white_materials"
+__helpurl__ = "https://apex-project.github.io/pyApex/help#white-materials"
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
