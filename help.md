@@ -155,6 +155,16 @@ Export all textnotes content to csv.
 
 ---
 
+### Flip Grid Ends
+
+###### EN 
+
+Flip visibility of bubbles at the ends of selected grids. If both bubbles were visible ony one lefts.
+
+###### RU
+
+Переключает отображения кружочков для выделенных осей. Если у оси были видимы оба кружочка, будет отображаться только один
+
 ## 4. Misc
 
 ### Sort and enumerate 
