@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-__title__ = 'Flip Grids Ends'
+__title__ = 'Flip\nGrid Ends'
 __doc__ = """"""
 
-__helpurl__ = "https://apex-project.github.io/pyApex/help#"
-__beta__ = True
+__helpurl__ = "https://apex-project.github.io/pyApex/help#flip-grid-ends"
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION

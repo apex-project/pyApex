@@ -8,6 +8,8 @@ Useful for placing General Plan dwg files with absolute coordinates.
 
 __title__ = 'Link DWG by Site'
 
+__helpurl__ = "https://apex-project.github.io/pyApex/help#link-dwg-site"
+
 import clr
 import System
 clr.AddReference('System')

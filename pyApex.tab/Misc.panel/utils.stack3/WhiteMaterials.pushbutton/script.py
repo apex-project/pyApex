@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*- 
-__doc__ = """Changes all materials appearance to Phase - New. Useful for paper-like render.
-Shift-Click: config exceptions"""
+__doc__ = """Changes appearance of all project materials to 'white' and back. Useful for paper-like render.
+You can set default material in command config (run with Shift-click)
+
+Изменяет отображение всех материалов в проекте на 'белый'. Удобно для создание 'бумажных' визуализаций.
+"""
 
 __title__ = 'White Materials'
 __helpurl__ = "https://apex-project.github.io/pyApex/help#white_materials"
