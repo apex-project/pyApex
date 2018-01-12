@@ -175,21 +175,108 @@ Then write order number of each element as another parameter
 
 ---
 
+### Link DWG Site
+
+###### EN
+
+Create DWG link and orient it to Shared Site Point. As if this DWG had shared coordinates.
+Useful for placing General Plan dwg files with absolute coordinates.
+
+###### RU
+
+Создает DWG связь и размещает ее в Точке Съемки проекта. Как если бы dwg имел общие координаты с моделью.
+Удобно при создании связи с dwg-файлами генплана.
+
+---
+
 ### White Materials
 
-useful for render. Change all material appearance to white and back. Exceptions are WIP.
+###### EN
 
-### Objects on Worksets
+Changes appearance of all project materials to 'white' and back. Useful for paper-like render.
+You can set default material (White) and exceptions (Glass, Wood etc.) in command config (run with Shift-click)
 
-show list of objects which belongs to selected workset. Useful to check before deleting the workset.
+###### RU
+1
+Изменяет отображение всех материалов в проекте на 'белый'. Удобно для создание 'бумажных' визуализаций.
 
-### Worksets for links
+Для выбора имени материла по-умолчанию и настроек исключений (например, стекло или дерево), запустите с зажатым Shift
 
-create worksets for all types of links.
 
-### Purge recursively
+### Show Dependent
 
-open each family and purge its content recursively
+###### EN
 
-### Select duplicate tags
+Show list of objects which belongs to selected workset. Useful to check before deleting the workset.
+
+List elements dependent on selected level or a workset. 
+
+To setup exceptions and limit run with Shift-click. If you set limit to 0, report will show only element types and elements counts.
+
+> Context: You can either activate a Plan View, select Plan Views in project browser or select Levels on a section. If nothing selected, you'll be able to choise levels from a list.
+
+###### RU
+
+Выдает список элементов, зависимых от выбранных видов либо от рабочих наборов. Для настроек исключения и ограничения кол-ва элементов, которые выводятся в списке, запустите с зажатым Shift. Если указать лимит равным 0, в отчете будут отображаться только типы элементов и их количество.
+
+> Контекст: Можно либо активировать План, либо выбрать Планы в Браузере проекта, либо выбрать уровни на разрезе или фасаде. Если ничего не выбрано, вам будет предложено выбрать уровнь из списка.
+
+---
+
+### Purge Families
+
+###### EN
+
+Reduce model size by purging loaded families. Opens each family in active document, then delete unused elements and load back to source document.
+Works recursively until the lowest level of embeded families.
+
+###### RU
+
+Помогает уменьшить размер модели за счет очиски семейств. Открывает каждое семейство в модели, удаляет неиспользуемые элементы и загружает обратно в модель.
+Работает рекурсивно, опускаясь до самого глубокого уровня вложенных семейств.
+
+Available cleaners:
+- families
+- image types
+- material WIP - use it on your risk
+- fill patterns WIP
+- line patterns WIP
+
+---
+
+### Find Duplicate Tags
+
+###### EN
+
+Select duplicated tags. If there are more than 2 tags for element on a view it will select redundant ones.
+
+Shitf+Click - on all views
+
+###### RU
+
+Выделяет повторяющиеся Марки-аннотации. Если на виде больше 2 марок для одного объекта, лишние будут выделены.
+
+## 5. Quality Control
+
+### Grid Angles
+
+###### EN
+
+Check angles between grids. Help to find not-accurately placed grids and outliers
+
+###### RU
+
+Позволяет найти отклонившиеся оси.
+
+### Links
+
+###### EN
+
+Checks are links pinned, shared site disabled and that link located on separated workset (started from 00_). 
+Fix these issues (except Shared site - should be fixed manually)
+
+###### RU
+
+Проверяет закреплены ли связи, отключена ли Общая площадка и находится ли связь на отдельном рабочем наборе (начинающемся с 00_)
+Исправляет эти ошибки (за исключением Общей площадки - нужно исправлять вручную)
 
