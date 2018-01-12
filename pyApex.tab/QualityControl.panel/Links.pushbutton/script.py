@@ -114,7 +114,7 @@ class SaveSharedCoordinatesCallback(ISaveSharedCoordinatesCallback):
 class CheckShared(Check):
     def __init__(self, elements):
         super(self.__class__, self).__init__(elements)
-        self.fix_text = "Отключите общие координаты:"
+        self.fix_text = "Disable Shared coordinates manually:"
 
     def check_one(self, e, k):
         t = doc.GetElement(k)

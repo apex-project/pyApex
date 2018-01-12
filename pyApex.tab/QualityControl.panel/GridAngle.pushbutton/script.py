@@ -188,7 +188,7 @@ def group_by_design_options(elements, design_options_dict):
 
 def run(interactive=False):
     if interactive:
-        text = "Сейчас будет выполнена проверка осей"
+        text = "Run Grid angles check?"
         a = TaskDialog.Show(__title__, text,
             TaskDialogCommonButtons.Yes|TaskDialogCommonButtons.Cancel)
 
