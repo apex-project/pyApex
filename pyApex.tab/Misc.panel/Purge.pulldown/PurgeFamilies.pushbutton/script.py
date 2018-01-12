@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 
 __title__ = 'Purge\nfamilies'
-__doc__ = """Opens each family in active document, then delete unused elements and load back to source document.
+__doc__ = """Reduce model size by purging loaded families. Opens each family in active document, then delete unused elements and load back to source document.
 Works recursively until the lowest level of embeded families.
 
-Открывает каждое семейство в модели, удаляет неиспользуемые элементы и загружает обратно в модель.
+Помогает уменьшить размер модели за счет очиски семейств. Открывает каждое семейство в модели, удаляет неиспользуемые элементы и загружает обратно в модель.
 Работает рекурсивно, опускаясь до самого глубокого уровня вложенных семейств.
 
 Available cleaners:
 - families
-- material
 - image types
-- fill patterns
-- line patterns
+- material WIP - use it on your risk
+- fill patterns WIP
+- line patterns WIP
 """
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#purge-families"

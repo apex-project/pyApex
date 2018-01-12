@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 __title__ = 'Find duplicate\nTags'
-__doc__ = """Select duplicates tags on active view\nShitf+Click - on all views"""
+__doc__ = """Select duplicated tags. If there are more than 2 tags for element on a view it will select redundant ones.
+
+Shitf+Click - on all views
+
+Выделяет повторяющиеся Марки-аннотации. Если на виде больше 2 марок для одного объекта, лишние будут выделены.
+"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#find-duplicate-tags"
 
