@@ -26,9 +26,9 @@ pyApex - это набор скриптов для Revit-плагина, кот�
 > Если в списке расширений нет pyApex, или в процессе установки возникли проблемы, обратитесь к разделу [Устранение неполадок](#%D0%A3%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B5%D0%BD%D0%B8%D0%B5-%D0%BD%D0%B5%D0%BF%D0%BE%D0%BB%D0%B0%D0%B4%D0%BE%D0%BA)
 
 
-![Extensions button](https://github.com/apex-project/pyApex/raw/gh-pages/assets/img/pyrevit_extensions_button.png)
+![Extensions button](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyrevit_extensions_button.png)
 
-![Extensions window](https://github.com/apex-project/pyApex/blob/gh-pages/assets/img/pyrevit_extensions_window.png)
+![Extensions window](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyrevit_extensions_window.png)
 
 --- 
 
