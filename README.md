@@ -3,6 +3,13 @@ layout: default
 title: Install guide
 permalink: /
 ---
+# Extension for pyRevit
+
+[Available features...](https://apex-project.github.io/pyApex/help)
+
+![pyApex](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyApex_buttons.png)
+
+
 # Install guide / Инструкция по установке
 
 ###### EN
