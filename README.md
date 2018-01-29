@@ -23,7 +23,7 @@ pyApex - это набор скриптов для Revit-плагина, кот�
 
 2. Запустите Revit, на вкладке pyRevit - в подгруппе pyRevit нажмите кнопку Extenstions. В открывшемся списке выберите в списке pyApex и нажмите Install Package. Готово!
 
-> Если в списке расширений нет pyApex, или в процессе установки возникли проблемы, обратитесь к разделу [Устранение неполадок](#%D0%A3%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B5%D0%BD%D0%B8%D0%B5-%D0%BD%D0%B5%D0%BF%D0%BE%D0%BB%D0%B0%D0%B4%D0%BE%D0%BA)
+> Если в списке расширений нет pyApex, или в процессе установки возникли проблемы, обратитесь к разделу [Устранение неполадок](#устранение-неполадок)
 
 
 ![Extensions button](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyrevit_extensions_button.png)
@@ -46,7 +46,7 @@ B. You also can add this record manually.
 
 Find your pyRevit installation (usually it located in `C:\Users\%user%\AppData\Roaming\pyRevit\` or in `C:\ProgramData\pyRevit`). Open folder for necessary pyRevit version then again pyRevit and find `extensions` folder there. Full path should be similar to `C:\Users\%user%\AppData\Roaming\pyRevit\pyRevit-v45\pyRevit\extensions`
 
-In extensions folder open `extensions.json` using Notepad. Then add next text in a file before square bracket (`]`). Be sure that curly brackets separated by comma (`},{`).
+In extensions folder open `extensions.json` using Notepad. Then add next text in a file before square bracket `]`. Be sure that curly brackets separated by comma `},{`.
 
 ```
 ,{
@@ -81,7 +81,7 @@ B. Добавьте записть о pyApex вручную:
 
 Найдите директорию, в которую установлен pyRevit (чаще всего это `C:\Users\%user%\AppData\Roaming\pyRevit\` или `C:\ProgramData\pyRevit`). Откройте папку необходимой версии pyRevit, затем снова `pyRevit` и папку `extensions`. Полный путь будет похож на `C:\Users\%user%\AppData\Roaming\pyRevit\pyRevit-v45\pyRevit\extensions`
 
-В папке extensions с помощью Блокнота откройте `extensions.json`. Добавьте следующий текст в данный файл перед квадратной скобкой (`]`). Убедитесь что между фигурными скобками есть запятая (`},{`).
+В папке extensions с помощью Блокнота откройте `extensions.json`. Добавьте следующий текст в данный файл перед квадратной скобкой `]`. Убедитесь что между фигурными скобками есть запятая `},{`.
 
 ```
 ,{
