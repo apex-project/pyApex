@@ -8,26 +8,6 @@ https://apex-project.github.io/pyApex
 
 ![pyApex](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyApex_buttons.png)
 
-1. Selection
-
-Open many views, Extract IDs from text, Zoom Base Point
-
-2. Model
-
-Remove Level Safely, Unjoin many objects
-
-3. Detail
-
-Copy Visibility/Graphics filters, Export text notes, Flip grids...
-
-4. Misc
-
-Sort and enumerate, Link DWG by shared coordinates, Whiten materials, Purge families ...
-
-5. Quality control
-
-Check links worksets, pin-status, shared site; Find off-axis Grids
-
 [All available features...](https://apex-project.github.io/pyApex/help)
 
 ---
@@ -42,7 +22,7 @@ pyApex is an extension (or series of scripts) for Revit addin named [pyRevit](ht
 
 2. Open Revit. Then install extension from pyRevit tab - Extensions - select pyApex and click Install Package. Voila!
 
-> If there is not pyApex in extensions list or if you stucked with another problem during install go to [Troubleshoting](#troubleshooting)
+> If there is not pyApex in extensions list or if you stucked with another problem during install go to [Troubleshoting](https://apex-project.github.io/pyApex/#troubleshooting)
 
 ###### RU
 
@@ -52,7 +32,7 @@ pyApex - это набор скриптов для Revit-плагина, кот�
 
 2. Запустите Revit, на вкладке pyRevit - в подгруппе pyRevit нажмите кнопку Extenstions. В открывшемся списке выберите в списке pyApex и нажмите Install Package. Готово!
 
-> Если в списке расширений нет pyApex, или в процессе установки возникли проблемы, обратитесь к разделу [Устранение неполадок](#устранение-неполадок)
+> Если в списке расширений нет pyApex, или в процессе установки возникли проблемы, обратитесь к разделу [Устранение неполадок](https://apex-project.github.io/pyApex/#устранение-неполадок)
 
 
 ![Extensions button](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyrevit_extensions_button.png)
