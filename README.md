@@ -1,64 +1,65 @@
-# pyApex
-Apex Project BIM Utils - an extension for [pyRevit](http://eirannejad.github.io/pyRevit/)
+# Extension for pyRevit 
 
-![Preview image](https://raw.githubusercontent.com/apex-project/pyApex/master/preview.png)
+An extension for [pyRevit](http://eirannejad.github.io/pyRevit/)
 
-## Инструкция по установке
-
-1. Скачайте и установите pyRevit http://eirannejad.github.io/pyRevit/ (на время установки необходимо подключение к интернету)
-
-2. Откройте Revit, на вкладке pyRevit - Extenstions, выберите в списке pyApex и нажмите Install Package. Готово! :ok_hand:
-
-![Extensions](https://raw.githubusercontent.com/apex-project/pyApex/master/extensions.png)
-
-## Installation
-
-1. Download and install pyRevit from http://eirannejad.github.io/pyRevit/
-
-2. Open Revit. Then install extension from pyRevit tab - Extensions - select pyApex and click Install Package. Voila!
-
+https://apex-project.github.io/pyApex
 
 ## Features
 
+![pyApex](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyApex_buttons.png)
+
 1. Selection
 
-- Open Views - opens all selected views
-
-- Select Many IDs - select elements by text pasted from Warnings Reports
-
-- Zoom Base Point
+Open many views, Extract IDs from text, Zoom Base Point
 
 2. Model
 
-- Change Level - remove selected level and transfer all its object to another selected level
-
-- Level Dependence - show elements dependen of selected levels
-
-- Unjoin Selected - unjoin all selected geometry
-
-- Unjoin Warnings - unjoin elements by pasted text from Warnings Reports
+Remove Level Safely, Unjoin many objects
 
 3. Detail
 
-- Copy VG Filters - copying filter from one view template to others
-
-- Text Notes 2 CSV - finds text notes on selected views and saves it's content to csv
+Copy Visibility/Graphics filters, Export text notes, Flip grids...
 
 4. Misc
 
-- SheetsEnum - enumerate selected sheets (WIP)
+Sort and enumerate, Link DWG by shared coordinates, Whiten materials, Purge families ...
 
-- White Materials - useful for render. Change all material appearance to white and back. Exceptions are WIP.
+5. Quality control
 
-- Objects on Worksets - show list of objects which belongs to selected workset. Useful to check before deleting the workset.
+Check links worksets, pin-status, shared site; Find off-axis Grids
 
-- Worksets for links - create worksets for all types of links.
+[All available features...](https://apex-project.github.io/pyApex/help)
 
-- Purge recursively - open each family and purge its content recursively
+---
 
-- Select duplicate tags
+# Install guide / Инструкция по установке
+
+###### EN
+
+pyApex is an extension (or series of scripts) for Revit addin named [pyRevit](http://eirannejad.github.io/pyRevit/). So before using our scripts you should install pyRevit. Then just enable our extension in settings.
+
+1. Download and install pyRevit from [http://eirannejad.github.io/pyRevit/](http://eirannejad.github.io/pyRevit/)
+
+2. Open Revit. Then install extension from pyRevit tab - Extensions - select pyApex and click Install Package. Voila!
+
+> If there is not pyApex in extensions list or if you stucked with another problem during install go to [Troubleshoting](#troubleshooting)
+
+###### RU
+
+pyApex - это набор скриптов для Revit-плагина, который называется [pyRevit](http://eirannejad.github.io/pyRevit/). Поэтому для использования наших скриптов вам необходимо установить pyRevit, а затем в его настройках включить расширение pyApex
+
+1. Скачайте и установите pyRevit [http://eirannejad.github.io/pyRevit/](http://eirannejad.github.io/pyRevit/) (на время установки необходимо подключение к интернету)
+
+2. Запустите Revit, на вкладке pyRevit - в подгруппе pyRevit нажмите кнопку Extenstions. В открывшемся списке выберите в списке pyApex и нажмите Install Package. Готово!
+
+> Если в списке расширений нет pyApex, или в процессе установки возникли проблемы, обратитесь к разделу [Устранение неполадок](#устранение-неполадок)
 
 
+![Extensions button](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyrevit_extensions_button.png)
+
+![Extensions window](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyrevit_extensions_window.png)
+
+---
 
 ## Contribution
 
