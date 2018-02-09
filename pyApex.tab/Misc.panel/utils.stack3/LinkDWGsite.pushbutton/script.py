@@ -108,7 +108,7 @@ def main():
 
     # override rotation option
     if __shiftclick__:
-        q = TaskDialog.Show(__title__, "Is it okay?",
+        q = TaskDialog.Show(__title__, "Is it okay?\nIf not dwg will be rotated",
                                 TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No | TaskDialogCommonButtons.Cancel)
         if str(q) == "No":
             rotate = True
