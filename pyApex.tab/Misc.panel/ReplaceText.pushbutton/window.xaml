@@ -1,0 +1,25 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Replace text:" Height="220" Width="400" ShowInTaskbar="False" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" ScrollViewer.VerticalScrollBarVisibility="Disabled" HorizontalContentAlignment="Center">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto" MinHeight="20"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,0">
+            <Label x:Name="label01" Content="Find:" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <TextBox x:Name="textFind" HorizontalAlignment="Stretch" Height="23" VerticalAlignment="Top"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,0,0,0">
+            <Label x:Name="label02" Content="Replace:" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <TextBox x:Name="textReplace" HorizontalAlignment="Stretch" Height="23" VerticalAlignment="Top"/>
+        </StackPanel>
+
+        <Button Grid.Row="3" Grid.ColumnSpan="5" Margin="0,15,0,0" Click="run" Content="Replace" />
+    </Grid>
+</Window>
