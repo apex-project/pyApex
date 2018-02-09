@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__title__ = 'Remove Level Safely'
+__title__ = 'Remove Level Safely\nBETA'
 __doc__ = """Move all elements based on specified level onto another level"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#remove-level"

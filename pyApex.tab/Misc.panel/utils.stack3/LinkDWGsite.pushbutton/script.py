@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*- 
 __doc__ = """Create DWG link and orient it to Shared Site Point. As if this DWG had shared coordinates.
 Useful for placing General Plan dwg files with absolute coordinates.
+Shift+Click - enable/disable rotation manually
 
 Создает DWG связь и размещает ее в Точке Съемки проекта. Как если бы dwg имел общие координаты с моделью.
 Удобно при создании связи с dwg-файлами генплана.
+Shift+Click - включить или выключить поворот вручную
 """
 
 __title__ = 'Link DWG by Site'
@@ -24,6 +26,7 @@ except:
 pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 from Autodesk.Revit.DB import *
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 
 if pyRevitNewer44:
     from pyrevit import script
@@ -103,6 +106,17 @@ def main():
         logger.error(e)
         status = False
 
+    # override rotation option
+    if __shiftclick__:
+        q = TaskDialog.Show(__title__, "Is it okay?",
+                                TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No | TaskDialogCommonButtons.Cancel)
+        if str(q) == "No":
+            rotate = True
+        elif str(q) == "Yes":
+            rotate = False
+        else:
+            return
+
     if status:
         if rotate:
             l = doc.GetElement(e_id)
@@ -112,7 +126,7 @@ def main():
                                     XYZ(origin.X, origin.Y, origin.Z + 1))
 
             ElementTransformUtils.RotateElement(doc, l.Id, axis, -project_angle)
-            l.Pinned = True
+        l.Pinned = True    
         t.Commit()
     else:
         t.RollBack()
