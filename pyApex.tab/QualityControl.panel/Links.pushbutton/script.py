@@ -19,7 +19,7 @@ except:
     pyRevitNewer44 = True
 
 if pyRevitNewer44:
-    from pyrevit import script, revit
+    from pyrevit import script
     logger = script.get_logger()
     output = script.get_output()
     linkify = output.linkify
