@@ -32,7 +32,7 @@ if pyRevitNewer44:
     from pyrevit import script
     from pyrevit.forms import pick_file
     logger = script.get_logger()
-    from pyrevit.revit import doc, selection
+    from pyrevit.revit import doc, selection, uidoc
 
     selection = selection.get_selection()
     my_config = script.get_config()
@@ -41,13 +41,14 @@ else:
     from scriptutils import logger
     from scriptutils.userinput import pick_file
     from scriptutils import this_script as script
-    from revitutils import doc, selection
+    from revitutils import doc, selection, uidoc
 
     my_config = script.config
 
 
 def main():
     location = doc.ActiveProjectLocation
+    activeview = uidoc.ActiveView
     project_position = location.get_ProjectPosition(XYZ.Zero)
     project_angle = project_position.Angle
 
@@ -56,29 +57,42 @@ def main():
     # Search for any 3D view or a Plan view
     cl = FilteredElementCollector(doc)
     views = cl.OfCategory(BuiltInCategory.OST_Views).WhereElementIsNotElementType().ToElements()
-    target_view = None
-    target_view_project = None
-    target_view_3d = None
+
+    q = TaskDialog.Show(__title__, "Link CAD to current view only?",
+                        TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No | TaskDialogCommonButtons.Cancel)
+    if str(q) == "No":
+        this_view_only = False
+        target_view = None
+    elif str(q) == "Yes":
+        this_view_only = True
+        target_view = activeview
+    else:
+        return
+
     rotate = False
-    for v in views:
-        if type(v) == ViewPlan:
-            orientation = v.get_Parameter(BuiltInParameter.PLAN_VIEW_NORTH)
-            if orientation.AsInteger() == 1:
-                target_view = v
-                break
-            else:
-                if not target_view_project:
-                    target_view_project = v
-
-        if type(v) == View3D and not target_view_3d:
-            target_view_3d = v
-
     if not target_view:
-        rotate = True
-        if target_view_project:
-            target_view = target_view_project
-        elif target_view_3d:
-            target_view = target_view_3d
+        target_view_project = None
+        target_view_3d = None
+
+        for v in views:
+            if type(v) == ViewPlan:
+                orientation = v.get_Parameter(BuiltInParameter.PLAN_VIEW_NORTH)
+                if orientation.AsInteger() == 1:
+                    target_view = v
+                    break
+                else:
+                    if not target_view_project:
+                        target_view_project = v
+
+            if type(v) == View3D and not target_view_3d:
+                target_view_3d = v
+
+        if not target_view:
+            rotate = True
+            if target_view_project:
+                target_view = target_view_project
+            elif target_view_3d:
+                target_view = target_view_3d
 
     if not target_view:
         logger.error("Please create 3D view or a PlanView in a project to place DWG correctly")
@@ -94,6 +108,7 @@ def main():
     o.Unit = ImportUnit.Meter
     o.OrientToView = False
     o.ReferencePoint = origin
+    o.ThisViewOnly = this_view_only
 
     link_func = doc.Link.Overloads[str, DWGImportOptions, View, System.Type.MakeByRefType(ElementId)]
 
@@ -118,8 +133,8 @@ def main():
             return
 
     if status:
+        l = doc.GetElement(e_id)
         if rotate:
-            l = doc.GetElement(e_id)
             if l.Pinned:
                 l.Pinned = False
             axis = Line.CreateBound(origin,
