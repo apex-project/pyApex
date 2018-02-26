@@ -75,6 +75,9 @@ def main():
         target_view_3d = None
 
         for v in views:
+            if v.IsTemplate:
+                continue
+
             if type(v) == ViewPlan:
                 orientation = v.get_Parameter(BuiltInParameter.PLAN_VIEW_NORTH)
                 if orientation.AsInteger() == 1:
@@ -95,7 +98,7 @@ def main():
                 target_view = target_view_3d
 
     if not target_view:
-        logger.error("Please create 3D view or a PlanView in a project to place DWG correctly")
+        logger.error("Please create 3D view or a PlanView in a project to place CAD correctly")
         return
 
     path = pick_file(files_filter="DWG files (*.dwg)|*.dwg|DXF files (*.dxf)|*.dxf|DGN files (*.dgn)|*.dgn|All files (*.*)|*.*")
@@ -117,13 +120,13 @@ def main():
     try:
         status, e_id = link_func(path, o, target_view, )
     except Exception as e:
-        logger.error("Unable to import DWG")
+        logger.error("Unable to import CAD")
         logger.error(e)
         status = False
 
     # override rotation option
     if __shiftclick__:
-        q = TaskDialog.Show(__title__, "Is it okay?\nIf not dwg will be rotated",
+        q = TaskDialog.Show(__title__, "Is it okay?\nIf not CAD will be rotated",
                                 TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No | TaskDialogCommonButtons.Cancel)
         if str(q) == "No":
             rotate = True
