@@ -171,14 +171,16 @@ def group_by_type(elements_ids):
             el_type = e.Category.Name
         except:
             el_type = "Other"
-        el_type += " - " + e.GetType().Name.ToString()
+
+        
 
         if el_type in ignore_types:
             continue
 
-        if el_type not in result_dict:
-            result_dict[el_type] = []
-        result_dict[el_type].append(e_id)
+        el_type_full = el_type + " - " + e.GetType().Name.ToString()
+        if el_type_full not in result_dict:
+            result_dict[el_type_full] = []
+        result_dict[el_type_full].append(e_id)
 
     return result_dict
 
