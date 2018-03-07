@@ -171,6 +171,7 @@ def group_by_type(elements_ids):
             el_type = e.Category.Name
         except:
             el_type = "Other"
+        el_type += " - " + e.GetType().Name.ToString()
 
         if el_type in ignore_types:
             continue
