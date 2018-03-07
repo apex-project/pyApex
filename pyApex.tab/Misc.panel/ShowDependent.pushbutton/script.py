@@ -87,7 +87,8 @@ class CheckBox:
 def all_levels():
     cl = FilteredElementCollector(doc)
     all = cl.OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().ToElements()
-    return all
+    all_sorted = sorted(all, key=lambda l: l.Name)
+    return all_sorted
 
 
 def all_worksets():
