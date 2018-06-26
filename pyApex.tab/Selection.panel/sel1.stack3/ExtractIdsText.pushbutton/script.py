@@ -29,14 +29,14 @@ if pyRevitNewer44:
     my_config = script.get_config()
 
 else:
-    from scriptutils import logger, this_script
+    from scriptutils import logger
+    from scriptutils import this_script as script
     from revitutils import doc, uidoc
-    from scriptutils import this_script
     from scriptutils.userinput import WPFWindow
 
-    my_config = this_script.config
-    output = this_script.output
-    datafile = this_script.get_document_data_file(0, "pym", command_name="SelList")
+    my_config = script.config
+    output = script.output
+    datafile = script.get_document_data_file(0, "pym", command_name="SelList")
 
 import os
 import re
@@ -162,7 +162,7 @@ class ExtractIdsTextWindow(WPFWindow):
     # noinspection PyMethodMayBeStatic
     def send(self, sender, args):
         my_config.reduce_duplicates = self.reduce_duplicates.IsChecked
-        this_script.save_config()
+        script.save_config()
         parse(self.text.Text, reduce_duplicates = self.reduce_duplicates.IsChecked)
         self.Close()
 
