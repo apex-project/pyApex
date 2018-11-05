@@ -20,7 +20,7 @@ pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 if pyRevitNewer44:
     from pyrevit import script, revit
     from pyrevit.revit import uidoc, doc
-    from pyrevit.forms import SelectFromCheckBoxes, CommandSwitchWindow
+    from pyrevit.forms import SelectFromCheckBoxes, CommandSwitchWindow, alert
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
@@ -30,7 +30,7 @@ if pyRevitNewer44:
 else:
     from scriptutils import logger, this_script as script
     from revitutils import doc, selection, uidoc
-    from scriptutils.userinput import SelectFromCheckBoxes, CommandSwitchWindow
+    from scriptutils.userinput import SelectFromCheckBoxes, CommandSwitchWindow, alert
     output = script.output
     my_config = script.config
 
@@ -229,6 +229,28 @@ def level_dependent():
 
     return results
 
+def selection_dependent():
+    """By selection"""
+    sel = selection.elements
+    if not len(sel):
+        alert("Nothing selected")
+        return
+
+    results = {}
+    for e in sel:
+        t = Transaction(doc, "Check selection " + str(e.Id.IntegerValue))
+        t.Start()
+        elements = doc.Delete(e.Id)
+        t.RollBack()
+        try:
+            el_type = e.Category.Name
+        except:
+            el_type = "Other"
+
+        elements = filter(lambda x: x != e.Id, elements)
+        results["%s, ID: %d" % (el_type, e.Id.IntegerValue)] = group_by_type(elements)
+
+    return results
 
 def workset_dependent():
     """By workset"""
@@ -314,7 +336,8 @@ def print_elements(data):
 
 def method_switch():
     available_methods = [
-        level_dependent
+        level_dependent,
+        selection_dependent
     ]
     if doc.IsWorkshared:
         available_methods.append(workset_dependent)
