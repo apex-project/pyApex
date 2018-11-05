@@ -48,10 +48,11 @@ def config_temp_dir():
     except:
         import purge_families_defaults as cdef
         v = cdef.temp_dir
-
+        
         my_config.temp_dir = v
         script.save_config()
-
+    if isinstance(v, list):
+        v = v[0]
     return v
 
 window_title = __title__.replace("\n", " ")
@@ -866,7 +867,7 @@ class CheckBoxFunc:
 
 
 def create_directory(file, top_dir=PURGE_DIR, date=True):
-    # print(file)
+    print(top_dir)
     if date:
         time_stamp = "_" + datetime.now().strftime("%y%m%d_%H-%M-%S")
     else:
