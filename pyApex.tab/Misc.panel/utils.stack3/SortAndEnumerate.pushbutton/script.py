@@ -16,7 +16,7 @@ __helpurl__ = "https://apex-project.github.io/pyApex/help#sort-and-enumerate"
 
 import operator
 
-from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons, Selection
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType
 
 from Autodesk.Revit.DB import Transaction, TransactionGroup
@@ -36,7 +36,7 @@ if pyRevitNewer44:
 
     logger = script.get_logger()
     from pyrevit.revit import doc, selection
-
+    from curve_chain import pick_chain
     selection = selection.get_selection()
     my_config = script.get_config()
 else:
@@ -45,9 +45,35 @@ else:
     from scriptutils import this_script as script
     from scriptutils.userinput import WPFWindow
     from revitutils import doc, selection
-
+    from curve_chain import pick_chain
     my_config = script.config
 
+
+
+class PickLines(Selection.ISelectionFilter):
+    # standard API override function
+    def AllowElement(self, element):
+        if element.Category.Id.IntegerValue == int(BuiltInCategory.OST_Curves):
+            return True
+        else:
+            return False
+
+    # standard API override function
+    def AllowReference(self, refer, point):
+        return False
+
+
+def picklines():
+    try:
+        msfilter = PickLines()
+        selection_list = pick_elements("Select curves to sort by")
+        filtered_list = []
+        for el in selection_list:
+            filtered_list.append(el)
+        return (filtered_list)
+    except Exception as exc:
+        logger.error(exc)
+        pass
 
 
 def get_selection():
@@ -58,6 +84,15 @@ def get_selection():
     """
     return selection.elements
 
+def sort_joined_curves(curves):
+    adjoinedcurves = curves
+    count = 0
+    end = 0
+    while len(adjoinedcurves) > 0 and count < 100:
+        c = curves[0]
+        result = []
+        adjoinedcurves = c.GetAdjoinedCurveElements(0)
+        count += 1
 
 class EnumerateWindow(WPFWindow):
     def __init__(self, xaml_file_name, selected_elements):
@@ -65,7 +100,7 @@ class EnumerateWindow(WPFWindow):
         self.selection, self.is_geom = self.filter_geometry_and_other(is_geom_list, not_geom_list)
 
         self.extra_geom_keys = [
-                                # "<Along curve>",
+                                "<Along curve>",
                                 "<X coordinate>",
                                 "<Y coordinate>",
                                 "<Z coordinate>"
@@ -215,12 +250,26 @@ class EnumerateWindow(WPFWindow):
 
     def element_parameter_dict(self, elements, parameter_to_sort):
         result = {}
+        if parameter_to_sort == "<Along curve>":
+            # lines = picklines()
+            ids_a = [662032, 662063, 662123, 662149, 662203, 662236, 662281]
+            ids_b = [662349]
+            lines = pick_chain(True)
+
+
+
         for e in elements:
             if type(parameter_to_sort) == str:
                 if parameter_to_sort[0] == "<" and parameter_to_sort[2:] == " coordinate>":
                     parameter_loc = parameter_to_sort[1]
                     loc = e.Location
                     v = getattr(loc.Point, parameter_loc)
+                elif parameter_to_sort == "<Along curve>":
+                    logger.error("<Along curve>")
+                    loc = e.Location
+                    for c in lines:
+                        v = c.GeometryCurve.Project(loc.Point).Parameter
+                        print(v)
                 else:
                     logger.error("Parameter error")
                     return

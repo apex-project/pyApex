@@ -33,3 +33,7 @@ def str2list(s):
     l = filter_list(l)
 
     return l
+
+
+def compare_xyz(xyz1, xyz2):
+    return xyz1.X == xyz2.X and xyz1.Y == xyz2.Y and xyz1.Z == xyz2.Z
