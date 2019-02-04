@@ -1,38 +1,20 @@
 # -*- coding: utf-8 -*-
 __title__ = 'Show\nDependent'
 __doc__ = """List elements dependent on selected levels. To setup exceptions and limit run with Shift-click.
-Context: You can either activate a Plan View, select Plan Views in project browser or select Levels on a section. If nothing selected, you'll be able to choise levels from a list.
 
-Выдает список элементов, зависимых от выбранных видов. Для настроек исключения и ограничения кол-ва элементов, которые выводятся в списке, запустите с зажатым Shift
-Контекст: Можно либо активировать План, либо выбрать Планы в Браузере проекта, либо выбрать уровни на разрезе или фасаде. Если ничего не выбрано, вам будет предложено выбрать уровнь из списка."""
+Выдает список элементов, зависимых от выбранных видов. Для настроек исключения и ограничения кол-ва элементов, которые выводятся в списке, запустите с зажатым Shift"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#show-dependent"
 
+from pyrevit import script, revit
+from pyrevit.revit import uidoc, doc
+from pyrevit.forms import SelectFromList, CommandSwitchWindow, alert, TemplateListItem
+output = script.get_output()
+logger = script.get_logger()
+linkify = output.linkify
+selection = revit.get_selection()
+my_config = script.get_config()
 
-try:
-    from pyrevit.versionmgr import PYREVIT_VERSION
-except:
-    from pyrevit import versionmgr
-    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
-
-pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
-
-if pyRevitNewer44:
-    from pyrevit import script, revit
-    from pyrevit.revit import uidoc, doc
-    from pyrevit.forms import SelectFromCheckBoxes, CommandSwitchWindow, alert
-    output = script.get_output()
-    logger = script.get_logger()
-    linkify = output.linkify
-    selection = revit.get_selection()
-    my_config = script.get_config()
-
-else:
-    from scriptutils import logger, this_script as script
-    from revitutils import doc, selection, uidoc
-    from scriptutils.userinput import SelectFromCheckBoxes, CommandSwitchWindow, alert
-    output = script.output
-    my_config = script.config
 
 from Autodesk.Revit.DB import *
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
@@ -64,26 +46,6 @@ def config_limit():
     return v
 
 
-class CheckBox:
-    def __init__(self, element, name=None, default_state=False):
-        self.element = element
-
-        if name:
-            self.name = name
-        else:
-            self.name = element.Name
-        self.state = default_state
-
-    def __str__(self):
-        return self.name
-
-    def __nonzero__(self):
-        return self.state
-
-    def __bool__(self):
-        return self.state
-
-
 def all_levels():
     cl = FilteredElementCollector(doc)
     all = cl.OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().ToElements()
@@ -99,37 +61,9 @@ def all_worksets():
 
 
 def select_levels_dialog(elements_all, name = "parent object"):
-    options = []
-
-    for e in elements_all:
-        cb = CheckBox(e, e.Name.replace("_","__"))
-        options.append(cb)
-
-    selected = SelectFromCheckBoxes.show(options, title='Select %s to check' % name, width=300,
-                                         button_name='Select')
-    if not selected:
-        return
-
-    return [c.element for c in selected if c.state is True]
-
-
-# filter
-def get_levels_from_selection(selected_elements):
-    result = []
-    for e in selection.elements:
-        if type(e) == ViewPlan:
-            e = e.GenLevel
-        elif type(e) == Level:
-            pass
-        else:
-            continue
-        result.append(e)
-
-    if len(result) == 0:
-        if type(uidoc.ActiveView) == ViewPlan:
-            l_id = uidoc.ActiveView.GenLevel
-            result = [l_id]
-    return result
+    selected = SelectFromList.show(elements_all, name_attr='Name', title='Select %s to check' % name, width=300,
+                                         button_name='Select', multiselect=True)
+    return selected
 
 
 def check_dependent_views(l):
@@ -151,10 +85,10 @@ def starting_view():
     startingViewSettingsCollector.OfClass(StartingViewSettings).ToElements()
     startingView = None
 
-
     for settings in startingViewSettingsCollector:
         startingView = doc.GetElement(settings.ViewId)
 
+    logger.debug("Starting view", startingView)
     return startingView
 
 
@@ -193,13 +127,10 @@ def level_dependent():
         print("At least 2 levels should be created in a project to check dependent. Create one more level and run again")
         return
 
-    selected_levels = get_levels_from_selection(selection.elements)
-
-    if len(selected_levels) == 0:
-        selected_levels = select_levels_dialog(levels_all)
-        if not selected_levels:
-            print("Nothing selected")
-            return
+    selected_levels = select_levels_dialog(levels_all)
+    if not selected_levels:
+        print("Nothing selected")
+        return
 
     results = {}
     for e in selected_levels:
@@ -299,10 +230,7 @@ def print_elements_for_parent(result_dict, parent_name):
     else:
         ids_limited = []
         for key, ids in result_dict.items():
-            if pyRevitNewer44:
-                print('{} - {}:'.format( key, output.linkify(ids, title=len(ids) ) ) )
-            else:
-                print('{} - {}:'.format( key, len(ids) ))
+            print('{} - {}:'.format( key, output.linkify(ids, title=len(ids) ) ) )
 
             e_ids |= set(ids)
             ids_limited = ids[:limit]
@@ -320,11 +248,7 @@ def print_elements_for_parent(result_dict, parent_name):
 
             print('\n\n')
 
-        if pyRevitNewer44:
-            print('{}'.format(output.linkify(list(e_ids),
-                                             title='%d elements on %s' % (len(e_ids), parent_name))))
-        else:
-            print('%d elements on %s' % (len(e_ids), parent_name))
+        print('{}'.format(output.linkify(list(e_ids), title='%d elements on %s' % (len(e_ids), parent_name))))
 
     print("\n\n\n")
 
@@ -346,12 +270,8 @@ def method_switch():
         (f.__doc__.split("\n")[0], f)
         for f in available_methods
     )
-    if pyRevitNewer44:
-        selected_switch = CommandSwitchWindow.show(available_methods_dict.keys(),
+    selected_switch = CommandSwitchWindow.show(available_methods_dict.keys(),
                                                    message='Select method')
-    else:
-        selected_switch = CommandSwitchWindow(available_methods_dict.keys(),
-                                                   message='Select method').pick_cmd_switch()
     return available_methods_dict.get(selected_switch)
 
 
