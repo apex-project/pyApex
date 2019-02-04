@@ -25,22 +25,25 @@ try:
     from pyrevit.versionmgr import PYREVIT_VERSION
 except:
     from pyrevit import versionmgr
+
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
 pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 if pyRevitNewer44:
     from pyrevit import script, revit
-    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+    from pyrevit.forms import SelectFromList
+
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
     from pyrevit.revit import doc, uidoc, selection
+
     selection = selection.get_selection()
 
 else:
     from scriptutils import logger
-    from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
+    from scriptutils.userinput import SelectFromList
     from revitutils import doc, uidoc, selection
 
 selected_ids = selection.element_ids
@@ -99,7 +102,7 @@ def read_checkboxes_state():
 
 
 def save_checkboxes_state(checkboxes):
-    selected_ids = {c.id.ToString() for c in checkboxes}
+    selected_ids = {c.Id.IntegerValue.ToString() for c in checkboxes}
     f = open(datafile, 'w')
     pl.dump(selected_ids, f)
     f.close()
@@ -115,22 +118,23 @@ def get_view_templates(doc, view_type=None, sel_set=sel_set):
     cl_view_templates = FilteredElementCollector(doc).WhereElementIsNotElementType()
     allview_templates = cl_view_templates.OfCategory(BuiltInCategory.OST_Views).ToElementIds()
 
-    vt_dict = []
+    vt_list = []
     for vtId in allview_templates:
         vt = doc.GetElement(vtId)
         if vt.IsTemplate:
             if view_type is None or vt.ViewType == view_type:
-                vt_dict.append(CheckBoxOption(vt.Name, vtId, sel_set))
-    return vt_dict
+                vt_list.append(vt)
+    return vt_list
 
 
 def get_view_filters(doc, v):
-    dct = []
+    result = []
     ftrs = v.GetFilters()
     for fId in ftrs:
         f = doc.GetElement(fId)
-        dct.append(CheckBoxOption(f.Name, fId))
-    return dct
+        result.append(f)
+    return result
+
 
 def get_active_view():
     if type(doc.ActiveView) != View:
@@ -151,6 +155,9 @@ def get_active_view():
 
 def main():
     active_view = get_active_view()
+    if not active_view:
+        logger.warning('Activate a view to copy')
+        return
 
     logger.info('Source view selected: %s id%s' % (active_view.Name, active_view.Id.ToString()))
 
@@ -160,9 +167,9 @@ def main():
     active_template_filters_ch = get_view_filters(doc, active_view)
 
     sel_set = read_checkboxes_state()
-    vt_dict = get_view_templates(doc, sel_set=sel_set)
+    vt_list = get_view_templates(doc, sel_set=sel_set)
 
-    if not vt_dict:
+    if not vt_list:
         logger.warning('Project has no view templates')
         return
 
@@ -170,9 +177,9 @@ def main():
         logger.warning('Active view has no filter overrides')
         return
 
-    filter_checkboxes = SelectFromCheckBoxes.show(active_template_filters_ch,
-                                                  title='Select filters to copy',
-                                                  button_name='Select filters')
+    filter_checkboxes = SelectFromList.show(active_template_filters_ch, name_attr='Name',
+                                            title='Select filters to copy',
+                                            button_name='Select filters', multiselect=True)
     filter_checkboxes_sel = []
 
     # Select filters from active view
@@ -186,8 +193,8 @@ def main():
     """
     Target view templates selection
     """
-    view_checkboxes = SelectFromCheckBoxes.show(vt_dict, title='Select templates to apply filters',
-                                                button_name='Apply filters to templates')
+    view_checkboxes = SelectFromList.show(vt_list, name_attr='Name', title='Select templates to apply filters',
+                                          button_name='Apply filters to templates', multiselect=True)
     view_checkboxes_sel = []
 
     # Select view templates to copy
@@ -205,26 +212,23 @@ def main():
     t = Transaction(doc)
     t.Start(__title__)
 
-    for ch in view_checkboxes_sel:
-        vt = doc.GetElement(ch.id)
-
+    for vt in view_checkboxes_sel:
         if vt.Id == active_view.ViewTemplateId:
             logger.debug('Current template found')
             continue
 
         for f in filter_checkboxes_sel:
-            fId = f.id
             try:
-                vt.RemoveFilter(fId)
-                logger.info('filter %s deleted from template %s' % (fId.ToString(), vt.Name))
+                vt.RemoveFilter(f.Id)
+                logger.info('filter %s deleted from template %s' % (f.Id.IntegerValue.ToString(), vt.Name))
             except:
                 pass
 
             try:
-                fr = active_view.GetFilterOverrides(fId)
-                vt.SetFilterOverrides(fId, fr)
+                fr = active_view.GetFilterOverrides(f.Id)
+                vt.SetFilterOverrides(f.Id, fr)
             except Exception as e:
-                logger.warning('filter %s was not aplied to view %s\n%s' % (fId.ToString(),
+                logger.warning('filter %s was not aplied to view %s\n%s' % (f.Id.IntegerValue.ToString(),
                                                                             vt.Name, e))
 
     t.Commit()

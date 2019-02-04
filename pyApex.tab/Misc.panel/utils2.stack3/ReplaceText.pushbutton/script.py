@@ -13,49 +13,21 @@ from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageTyp
 
 from Autodesk.Revit.DB import Transaction, TransactionGroup
 
-try:
-    from pyrevit.versionmgr import PYREVIT_VERSION
-except:
-    from pyrevit import versionmgr
+from pyrevit import script
+from pyrevit.forms import WPFWindow, SelectFromList, TemplateListItem
 
-    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+logger = script.get_logger()
+from pyrevit.revit import doc, selection
 
-pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
-
-if pyRevitNewer44:
-    from pyrevit import script
-    from pyrevit.forms import WPFWindow, SelectFromList
-
-    logger = script.get_logger()
-    from pyrevit.revit import doc, selection
-
-    selection = selection.get_selection()
-    my_config = script.get_config()
-else:
-    forms = None
-    from scriptutils import logger
-    from scriptutils import this_script as script
-    from scriptutils.userinput import WPFWindow, SelectFromList
-    from revitutils import doc, selection
-
-    my_config = script.config
+selection = selection.get_selection()
+my_config = script.get_config()
 
 
 
-class CheckBoxParameter:
-    def __init__(self, parameter, default_state=False):
-        self.parameter = parameter
-        self.name = parameter.Definition.Name
-        self.state = default_state
-
-    def __str__(self):
-        return self.name
-
-    def __nonzero__(self):
-        return self.state
-
-    def __bool__(self):
-        return self.state
+class CheckBoxParameter(TemplateListItem):
+    @property
+    def name(self):
+        return self.item.Definition.Name
 
 
 class ReplaceTextWindow(WPFWindow):
@@ -71,7 +43,7 @@ class ReplaceTextWindow(WPFWindow):
             TaskDialog.Show(__title__, "Nothing selected")
             return
 
-        self.parameter_to_set = parameter_to_set[0].parameter
+        self.parameter_to_set = parameter_to_set
 
         WPFWindow.__init__(self, xaml_file_name)
 

@@ -28,7 +28,7 @@ pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 if pyRevitNewer44:
     from pyrevit import script, revit
-    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes, pick_folder, pick_file, save_file
+    from pyrevit.forms import save_file
     output = script.get_output()
     logger = script.get_logger()
     from pyrevit.revit import doc, uidoc, selection
@@ -37,7 +37,7 @@ if pyRevitNewer44:
 
 else:
     from scriptutils import logger, this_script as script
-    from scriptutils.userinput import WPFWindow, pick_folder, pick_file, save_file
+    from scriptutils.userinput import WPFWindow, save_file
     from revitutils import doc, uidoc, selection
     my_config = script.config
 

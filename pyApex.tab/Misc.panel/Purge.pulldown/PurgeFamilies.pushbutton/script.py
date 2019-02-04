@@ -28,7 +28,7 @@ pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 if pyRevitNewer44:
     from pyrevit import script, revit
     from pyrevit.revit import doc
-    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+    from pyrevit.forms import SelectFromList
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
@@ -37,7 +37,7 @@ if pyRevitNewer44:
 else:
     from scriptutils import logger, this_script as script
     from revitutils import doc, selection
-    from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
+    from scriptutils.userinput import SelectFromList
     output = script.output
     my_config = script.config
 
@@ -924,7 +924,8 @@ def main():
             opt = CheckBoxFunc(func, True)
             options.append(opt)
     if len(options) > 1:
-        all_checkboxes = SelectFromCheckBoxes.show(options,title='Select cleaners to Purge', width=300, button_name='Purge!')
+        all_checkboxes = SelectFromList.show(options,title='Select cleaners to Purge', width=300, button_name='Purge!',
+                                             multiselect=True)
         if all_checkboxes:
             selected_purgers = [c.func for c in all_checkboxes if c.state == True]
     else:

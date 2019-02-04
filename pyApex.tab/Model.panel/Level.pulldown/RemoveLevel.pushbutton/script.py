@@ -15,7 +15,7 @@ pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
 
 if pyRevitNewer44:
     from pyrevit import script, revit
-    from pyrevit.forms import SelectFromList, SelectFromCheckBoxes
+    from pyrevit.forms import SelectFromList
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
@@ -23,7 +23,7 @@ if pyRevitNewer44:
 
 else:
     from scriptutils import logger
-    from scriptutils.userinput import SelectFromList, SelectFromCheckBoxes
+    from scriptutils.userinput import SelectFromList
     from revitutils import doc
 
 from Autodesk.Revit.DB import *
@@ -109,8 +109,8 @@ def main():
         print("Levels wasn't found")
         return
 
-    selected1 = SelectFromCheckBoxes.show(options, title='Select levels to delete', width=300,
-                                               button_name='OK')
+    selected1 = SelectFromList.show(options, title='Select levels to delete', width=300,
+                                               button_name='OK', multiselect=True)
     selected_levels1 = [c.level for c in selected1 if c.state == True]
 
     if not selected_levels1:
