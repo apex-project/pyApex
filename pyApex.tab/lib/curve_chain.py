@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import itertools
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 from pyrevit import script, revit, forms
@@ -33,17 +34,12 @@ def pick_chain(find_chain=False):
     #     pass
 
 
-# def closest_point(chain, point):
-#     parameter_sum = 0
-#     for c in chain:
-
 
 def _hashset_to_list(hset):
     return list(map(lambda x: x, hset))
 
 
 def _sort_joined_curves_run(curve, end=0):
-
     curves = [curve]
     result = []
     result_ids = []
@@ -79,57 +75,6 @@ def _sort_joined_curves_run(curve, end=0):
 
         curves = map(lambda x: doc.GetElement(x),
                      doc.GetElement(c_id).GetAdjoinedCurveElements(_end))
-
-    # while len(curves) > 0 and i < 100:
-    #     c = curves[0]
-    #     logger.info("%d %d %d" % (i, _end, c.Id.IntegerValue))
-    #     if c.Id not in result_ids:
-    #         result_ids.append(c.Id)
-    #         result.append(c)
-    #         # direction_changed = False
-    #     else:
-    #         break
-    #         # if direction_changed:
-    #         #     break
-    #         # else:
-    #         #     _end = int(not(_end))
-    #         #     direction_changed = True
-    #         #     continue
-    #
-    #     curves = map(lambda x: doc.GetElement(x), c.GetAdjoinedCurveElements(_end))
-    #     logger.info(map(lambda x: x.Id.IntegerValue, curves))
-    #     #
-    #     # # on the first iteration check if something in another direction
-    #     # if i == 0 and len(curves) == 0: #  and _end == end
-    #     #     logger.info("i == 0 and len(curves) == 0 and end == 0")
-    #     #     _end = not(_end)
-    #     #     curves = map(lambda x: doc.GetElement(x), c.GetAdjoinedCurveElements(_end))
-    #
-    #     curves = _hashset_to_list(curves)
-    #     if len(curves) > 0:
-    #         new_end_point_a = curves[0].GeometryCurve.GetEndPoint(_end)
-    #         new_end_point_b = curves[0].GeometryCurve.GetEndPoint(int(not _end))
-    #
-    #         if pyu.compare_xyz(new_end_point_a, last_end_point):
-    #             # curves = map(lambda x: doc.GetElement(x), c.GetAdjoinedCurveElements(int(not _end)))
-    #             # curves = _hashset_to_list(curves)
-    #             last_end_point = curves[0].GeometryCurve.GetEndPoint(int(not _end))
-    #             _end = not _end
-    #         else:
-    #             last_end_point = curves[0].GeometryCurve.GetEndPoint(_end)
-    #
-    #     #         logger.info("%s = %s" % (new_end_point0.ToString(), last_end_point0.ToString()))
-    #     #         logger.info("or %s = %s" % (new_end_point1.ToString(), last_end_point1.ToString()))
-    #     #         _end = int(not _end)
-    #     #         # logger.info("pyu.compare_xyz(new_end_point, last_end_point)")
-    #     #         # curves = map(lambda x: doc.GetElement(x), c.GetAdjoinedCurveElements(int(not _end)))
-    #     #         last_end_point0 = _curves[0].GeometryCurve.GetEndPoint(1)
-    #     #         last_end_point1 = _curves[0].GeometryCurve.GetEndPoint(0)
-    #     #     else:
-    #     #         last_end_point0 = new_end_point0
-    #     #         last_end_point1 = new_end_point1
-
-        # curves = _hashset_to_list(curves)
 
         i += 1
     print(result_reversed)
@@ -176,6 +121,7 @@ def _normalise_chain_direction(chain):
                 was_reversed = True
         result.append(was_reversed)
 
-    print("result")
-    print(result)
+
     return chain
+
+
