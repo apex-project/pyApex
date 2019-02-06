@@ -16,48 +16,39 @@ __helpurl__ = "https://apex-project.github.io/pyApex/help#sort-and-enumerate"
 
 import operator
 
-from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons, Selection
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType
 
 from Autodesk.Revit.DB import Transaction, TransactionGroup
 
-try:
-    from pyrevit.versionmgr import PYREVIT_VERSION
-except:
-    from pyrevit import versionmgr
+from pyrevit import script, forms
+from pyrevit.forms import WPFWindow
 
-    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+logger = script.get_logger()
+from pyrevit.revit import doc, selection as _selection_pyr
+from curve_chain import pick_chain, chain_closest_point
+selection_pyr = _selection_pyr.get_selection()
+selection_elements = selection_pyr.elements
+my_config = script.get_config()
+wpf_window = None
 
-pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
+# def get_selection():
+#     """
+#     Get selected objects / sheets / views or allows user to select
+#
+#     :return: selected objects or None
+#     """
+#     return selection_doc.elements
 
-if pyRevitNewer44:
-    from pyrevit import script
-    from pyrevit.forms import WPFWindow
-
-    logger = script.get_logger()
-    from pyrevit.revit import doc, selection
-
-    selection = selection.get_selection()
-    my_config = script.get_config()
-else:
-    forms = None
-    from scriptutils import logger
-    from scriptutils import this_script as script
-    from scriptutils.userinput import WPFWindow
-    from revitutils import doc, selection
-
-    my_config = script.config
-
-
-
-def get_selection():
-    """
-    Get selected objects / sheets / views or allows user to select
-
-    :return: selected objects or None
-    """
-    return selection.elements
-
+def sort_joined_curves(curves):
+    adjoinedcurves = curves
+    count = 0
+    end = 0
+    while len(adjoinedcurves) > 0 and count < 100:
+        c = curves[0]
+        result = []
+        adjoinedcurves = c.GetAdjoinedCurveElements(0)
+        count += 1
 
 class EnumerateWindow(WPFWindow):
     def __init__(self, xaml_file_name, selected_elements):
@@ -65,7 +56,7 @@ class EnumerateWindow(WPFWindow):
         self.selection, self.is_geom = self.filter_geometry_and_other(is_geom_list, not_geom_list)
 
         self.extra_geom_keys = [
-                                # "<Along curve>",
+                                "<Along curve>",
                                 "<X coordinate>",
                                 "<Y coordinate>",
                                 "<Z coordinate>"
@@ -118,11 +109,6 @@ class EnumerateWindow(WPFWindow):
             self.parameterToSort.Text = my_config.parameter_to_sort = ""
 
         try:
-            self.parameterToSort.Text = str(my_config.parameter_to_sort)
-        except:
-            self.parameterToSort.Text = my_config.parameter_to_sort = ""
-
-        try:
             self.parameterToSet.Text = str(my_config.parameter_to_set)
         except:
             self.parameterToSet.Text = my_config.parameter_to_set = ""
@@ -138,14 +124,29 @@ class EnumerateWindow(WPFWindow):
         my_config.text_format = self.textFormat.Text
         my_config.leading_zeros = self.leadingZeros.Text
         my_config.parameter_to_sort = self.parameterToSort.Text
-        my_config.parameter_to_sort = self.parameterToSort.Text
         my_config.parameter_to_set = self.parameterToSet.Text
         my_config.is_reversed = self.isReversed.IsChecked
         script.save_config()
+    #
+    # def parameterToSort_changed(self, sender, args):
+    #     if sender.SelectedItem == "<Along curve>":
+    #         forms.alert("Select curve to sort along")
+    #         self.Hide()
+    #         try:
+    #             chain, chain_is_reversed = pick_chain(True)
+    #         except Exception as exc:
+    #             logger.error(exc)
+    #         self.Show()
+    #         logger.info(chain)
+    #         logger.info(chain_is_reversed)
+    #     elif sender.SelectedItem == "---" and self.parameterToSort.Text != "---":
+    #         self.parameterToSort.Text = self.parameterToSort.Text
 
     @property
     def parameter_to_sort(self):
         p = self.parameterToSort.Text
+        if not self.parameterToSort or self.parameterToSort.Text == "":
+            return
         if type(p) == str and p in self.extra_geom_keys:
             return p
         else:
@@ -153,6 +154,8 @@ class EnumerateWindow(WPFWindow):
 
     @property
     def parameter_to_set(self):
+        if not self.parameterToSet or self.parameterToSet.Text == "":
+            return
         p = self.parameters_editable[self.parameterToSet.Text]
         return p
 
@@ -184,6 +187,11 @@ class EnumerateWindow(WPFWindow):
         return self.isReversed.IsChecked
 
     def run(self, sender, args):
+        # print(dir(self))
+        if not(self.parameter_to_sort and  self.parameter_to_sort != "" and self.parameter_to_set and  self.parameter_to_set != ""):
+            forms.alert("Error! All the parameters should be set")
+            return
+
         result = self.sort(self.selection, self.parameter_to_sort, self.is_reversed)
         i = self.start_from
         text_format = self.text_format
@@ -205,7 +213,12 @@ class EnumerateWindow(WPFWindow):
 
         my_config.start_from = i
 
+        # selection_doc.set self.selection
         self.write_config()
+        logger.debug("run - set_to", map(lambda e: e[0].Id.IntegerValue, result))
+        selection_pyr.set_to(map(lambda e: e[0].Id, result))
+        self.Close()
+
 
     def sort(self, elements, parameter_to_sort, reverse=False):
         param_dict = self.element_parameter_dict(elements, parameter_to_sort)
@@ -213,14 +226,31 @@ class EnumerateWindow(WPFWindow):
         return param_dict_sorted
         # return map(lambda x: x[0], param_dict_sorted)
 
+
     def element_parameter_dict(self, elements, parameter_to_sort):
         result = {}
+        chain, chain_is_reversed = (None, None)
+        if parameter_to_sort == "<Along curve>":
+            forms.alert("Select curve to sort along")
+            self.Hide()
+            try:
+                chain, chain_is_reversed = pick_chain(doc)
+            except Exception as exc:
+                logger.error(exc)
+            self.Show()
+            logger.debug(chain)
+            logger.debug(chain_is_reversed)
+
         for e in elements:
             if type(parameter_to_sort) == str:
                 if parameter_to_sort[0] == "<" and parameter_to_sort[2:] == " coordinate>":
                     parameter_loc = parameter_to_sort[1]
-                    loc = e.Location
-                    v = getattr(loc.Point, parameter_loc)
+                    loc_point = e.Location.Point
+                    v = getattr(loc_point, parameter_loc)
+                elif parameter_to_sort == "<Along curve>" and chain:
+                    logger.debug("<Along curve>")
+                    loc_point = e.Location.Point
+                    v = chain_closest_point(loc_point, chain, chain_is_reversed, doc)
                 else:
                     logger.error("Parameter error")
                     return
@@ -228,6 +258,7 @@ class EnumerateWindow(WPFWindow):
                 param = e.get_Parameter(parameter_to_sort.Definition)
                 v = self.parameter_value_get(param)
             if v:
+                logger.debug("v: %s" % v)
                 result[e] = v
 
         return result
@@ -391,17 +422,22 @@ class EnumerateWindow(WPFWindow):
 
 
 def main():
+    global wpf_window
     # Input
-    sel = get_selection()
-    if not sel:
+    if not selection_elements:
         logger.error("Nothing selected")
         return
 
-    if len(sel) < 2:
+    if len(selection_elements) < 2:
         logger.error('At least 2 elements or views must be selected.')
         return
 
-    EnumerateWindow('window.xaml', sel).ShowDialog()
+    logger.debug("main - selection", map(lambda e: e.Id.IntegerValue, selection_elements))
+    wpf_window = EnumerateWindow('window.xaml', selection_elements)
+    # print(dir(wpf_window))
+    wpf_window.show(True)
+    # print(dir(wpf_window))
+
 
 
 if __name__ == "__main__":
