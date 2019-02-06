@@ -1,20 +1,15 @@
 # -*- coding: utf-8 -*-
 import itertools
-from Autodesk.Revit.DB import ElementId, Curve
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 from pyrevit import script, revit, forms
 import pyapex_utils as pyu
 
-output = script.get_output()
 logger = script.get_logger()
-linkify = output.linkify
-doc = revit.doc
-uidoc = revit.uidoc
-selection = revit.get_selection()
 
 
-def pick_chain(find_chain=False):
-    last_selection = selection.element_ids
+def pick_chain(doc):
+    selection = revit.selection.get_selection()
+    # last_selection = selection.element_ids
     selected_curve = revit.pick_element("Select curves to sort by")
 
     if not selected_curve:
@@ -26,25 +21,30 @@ def pick_chain(find_chain=False):
     try:
         selected_curve.GeometryCurve
     except:
-        forms.alert("Selected element is not a Curve.\nOr it have no GeometryCurve parameter")
+        forms.alert("Error! Selected element is not a Curve.\nOr it have no GeometryCurve parameter")
         return None, None
+
+    if not selected_curve.GeometryCurve.IsBound:
+        forms.alert("Error! Curve cannot be bounded")
+
     # chain
-    selection_list_sorted, selection_list_sorted_isreversed = _find_curve_chain(selected_curve)
+    selection_list_sorted, selection_list_sorted_isreversed = _find_curve_chain(selected_curve, doc)
     logger.debug("selection_list_sorted: %s" % selection_list_sorted)
-    if len(selection_list_sorted) > 1 and find_chain:
+    if len(selection_list_sorted) > 1:
         # TODO undo
         selection.set_to(selection_list_sorted)
         form_result = TaskDialog.Show("Select curve chain?", "Curve chain found. Use it?\nIf not, only one selected curve will be used",
                                       TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No)
 
-        selection.set_to(last_selection)
+        # selection.set_to(last_selection)
         if str(form_result) == "Yes":
             return selection_list_sorted, selection_list_sorted_isreversed
-    logger.debug("Sselected_curve: %s" % [selected_curve.Id])
+    logger.debug("Selected_curve: %s" % [selected_curve.Id])
     return [selected_curve.Id], None
 
 
-def _sort_joined_curves_run(curve, end=0):
+def _sort_joined_curves_run(curve, doc, end=0):
+    logger.debug("_sort_joined_curves_run, end: %d", end)
     curves = [curve]
     result = []
     result_ids = []
@@ -54,6 +54,7 @@ def _sort_joined_curves_run(curve, end=0):
     while len(curves) > 0 and i < 100:
         _end = end
         c = curves[0].GeometryCurve
+        # unbound
         c_id = curves[0].Id
         logger.debug("%d %d %d" % (i, end, c_id.IntegerValue))
 
@@ -62,13 +63,13 @@ def _sort_joined_curves_run(curve, end=0):
             if len(result) != 0:
                 c_last = result[-1]
                 logger.debug("%s=%s" % (c_last.GetEndPoint(end), c.GetEndPoint(end)))
-                bool_points_equal = pyu.compare_xyz(c_last.GetEndPoint(end), c.GetEndPoint(end))
+                bool_points_equal = pyu.compare_xyz(c_last.GetEndPoint(end), c.GetEndPoint(end), 5)
             else:
                 bool_points_equal = False
             logger.debug("eq %s" % bool_points_equal)
             if bool_points_equal:
                 logger.debug("Reverse")
-                c = c.CreateReversed()
+                # c = c.CreateReversed()
                 result_reversed.append(True)
                 _end = not end
             else:
@@ -77,12 +78,9 @@ def _sort_joined_curves_run(curve, end=0):
             result.append(c)
         else:
             break
-
-        curves = map(lambda x: doc.GetElement(x),
-                     doc.GetElement(c_id).GetAdjoinedCurveElements(_end))
-
+        curves = map(lambda x: doc.GetElement(x), doc.GetElement(c_id).GetAdjoinedCurveElements(_end))
         i += 1
-    print(result_reversed)
+
     result_curves = []
     for i in range(len(result_ids)):
         c_id = result_ids[i]
@@ -94,9 +92,10 @@ def _sort_joined_curves_run(curve, end=0):
     return result_ids, result_reversed
 
 
-def _find_curve_chain(curve):
-    result, result_is_reversed = _sort_joined_curves_run(curve, 1)
-    result_2, result_is_reversed_2 = _sort_joined_curves_run(curve, 0)
+def _find_curve_chain(curve, doc):
+    result, result_is_reversed = _sort_joined_curves_run(curve, doc, 1)
+
+    result_2, result_is_reversed_2 = _sort_joined_curves_run(curve, doc, 0)
 
     # combine result
     if len(result_2) > 1:
@@ -108,14 +107,15 @@ def _find_curve_chain(curve):
     return result, result_is_reversed
 
 
-def chain_closest_point(point, chain, chain_is_reversed):
+def chain_closest_point(point, chain, chain_is_reversed, doc):
     smallest_distance = None
     param = None
     for i in range(len(chain)):
         logger.debug(i)
         c = doc.GetElement(chain[i])
-        int_res = c.GeometryCurve.Project(point)
-        _param = c.GeometryCurve.ComputeNormalizedParameter(int_res.Parameter)
+        c_geom = c.GeometryCurve
+        int_res = c_geom.Project(point)
+        _param = c_geom.ComputeNormalizedParameter(int_res.Parameter)
 
         if chain_is_reversed:
             logger.debug("i: %d, Distance: %f, param: %f, reversed: %s" % (i, int_res.Distance, _param, chain_is_reversed[i]))
@@ -125,9 +125,8 @@ def chain_closest_point(point, chain, chain_is_reversed):
         else:
             logger.debug(
                 "i: %d, Distance: %f, param: %f, reversed: -" % (i, int_res.Distance, _param))
-        if smallest_distance is None \
-                or smallest_distance > int_res.Distance \
-                or i == len(chain) - 1:
+        if smallest_distance is None or smallest_distance > int_res.Distance:
+            # or (i == len(chain) - 1:
             smallest_distance = int_res.Distance
             param = i + _param
 

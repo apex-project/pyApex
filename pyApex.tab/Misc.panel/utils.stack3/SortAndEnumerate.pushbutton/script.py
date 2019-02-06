@@ -25,19 +25,20 @@ from pyrevit import script, forms
 from pyrevit.forms import WPFWindow
 
 logger = script.get_logger()
-from pyrevit.revit import doc, selection
+from pyrevit.revit import doc, selection as _selection_pyr
 from curve_chain import pick_chain, chain_closest_point
-selection = selection.get_selection()
+selection_pyr = _selection_pyr.get_selection()
+selection_elements = selection_pyr.elements
 my_config = script.get_config()
 wpf_window = None
 
-def get_selection():
-    """
-    Get selected objects / sheets / views or allows user to select
-
-    :return: selected objects or None
-    """
-    return selection.elements
+# def get_selection():
+#     """
+#     Get selected objects / sheets / views or allows user to select
+#
+#     :return: selected objects or None
+#     """
+#     return selection_doc.elements
 
 def sort_joined_curves(curves):
     adjoinedcurves = curves
@@ -212,7 +213,10 @@ class EnumerateWindow(WPFWindow):
 
         my_config.start_from = i
 
+        # selection_doc.set self.selection
         self.write_config()
+        logger.debug("run - set_to", map(lambda e: e[0].Id.IntegerValue, result))
+        selection_pyr.set_to(map(lambda e: e[0].Id, result))
         self.Close()
 
 
@@ -230,12 +234,12 @@ class EnumerateWindow(WPFWindow):
             forms.alert("Select curve to sort along")
             self.Hide()
             try:
-                chain, chain_is_reversed = pick_chain(True)
+                chain, chain_is_reversed = pick_chain(doc)
             except Exception as exc:
                 logger.error(exc)
             self.Show()
-            logger.info(chain)
-            logger.info(chain_is_reversed)
+            logger.debug(chain)
+            logger.debug(chain_is_reversed)
 
         for e in elements:
             if type(parameter_to_sort) == str:
@@ -246,7 +250,7 @@ class EnumerateWindow(WPFWindow):
                 elif parameter_to_sort == "<Along curve>" and chain:
                     logger.debug("<Along curve>")
                     loc_point = e.Location.Point
-                    v = chain_closest_point(loc_point, chain, chain_is_reversed)
+                    v = chain_closest_point(loc_point, chain, chain_is_reversed, doc)
                 else:
                     logger.error("Parameter error")
                     return
@@ -254,6 +258,7 @@ class EnumerateWindow(WPFWindow):
                 param = e.get_Parameter(parameter_to_sort.Definition)
                 v = self.parameter_value_get(param)
             if v:
+                logger.debug("v: %s" % v)
                 result[e] = v
 
         return result
@@ -419,19 +424,20 @@ class EnumerateWindow(WPFWindow):
 def main():
     global wpf_window
     # Input
-    sel = get_selection()
-    if not sel:
+    if not selection_elements:
         logger.error("Nothing selected")
         return
 
-    if len(sel) < 2:
+    if len(selection_elements) < 2:
         logger.error('At least 2 elements or views must be selected.')
         return
 
-    wpf_window = EnumerateWindow('window.xaml', sel)
+    logger.debug("main - selection", map(lambda e: e.Id.IntegerValue, selection_elements))
+    wpf_window = EnumerateWindow('window.xaml', selection_elements)
     # print(dir(wpf_window))
     wpf_window.show(True)
     # print(dir(wpf_window))
+
 
 
 if __name__ == "__main__":

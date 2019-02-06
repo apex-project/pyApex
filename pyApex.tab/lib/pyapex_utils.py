@@ -35,5 +35,10 @@ def str2list(s):
     return l
 
 
-def compare_xyz(xyz1, xyz2):
-    return xyz1.X == xyz2.X and xyz1.Y == xyz2.Y and xyz1.Z == xyz2.Z
+def compare_xyz(xyz1, xyz2, precision = None):
+    if precision != None:
+        return round(xyz1.X, precision) == round(xyz2.X, precision) \
+               and round(xyz1.Y, precision) == round(xyz2.Y, precision) \
+               and round(xyz1.Z, precision) == round(xyz2.Z, precision)
+    else:
+        return xyz1.X == xyz2.X and xyz1.Y == xyz2.Y and xyz1.Z == xyz2.Z
