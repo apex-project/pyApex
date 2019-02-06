@@ -21,60 +21,15 @@ from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageTyp
 
 from Autodesk.Revit.DB import Transaction, TransactionGroup
 
-try:
-    from pyrevit.versionmgr import PYREVIT_VERSION
-except:
-    from pyrevit import versionmgr
+from pyrevit import script, forms
+from pyrevit.forms import WPFWindow
 
-    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
-
-pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
-
-if pyRevitNewer44:
-    from pyrevit import script
-    from pyrevit.forms import WPFWindow
-
-    logger = script.get_logger()
-    from pyrevit.revit import doc, selection
-    from curve_chain import pick_chain
-    selection = selection.get_selection()
-    my_config = script.get_config()
-else:
-    forms = None
-    from scriptutils import logger
-    from scriptutils import this_script as script
-    from scriptutils.userinput import WPFWindow
-    from revitutils import doc, selection
-    from curve_chain import pick_chain
-    my_config = script.config
-
-
-
-class PickLines(Selection.ISelectionFilter):
-    # standard API override function
-    def AllowElement(self, element):
-        if element.Category.Id.IntegerValue == int(BuiltInCategory.OST_Curves):
-            return True
-        else:
-            return False
-
-    # standard API override function
-    def AllowReference(self, refer, point):
-        return False
-
-
-def picklines():
-    try:
-        msfilter = PickLines()
-        selection_list = pick_elements("Select curves to sort by")
-        filtered_list = []
-        for el in selection_list:
-            filtered_list.append(el)
-        return (filtered_list)
-    except Exception as exc:
-        logger.error(exc)
-        pass
-
+logger = script.get_logger()
+from pyrevit.revit import doc, selection
+from curve_chain import pick_chain, chain_closest_point
+selection = selection.get_selection()
+my_config = script.get_config()
+wpf_window = None
 
 def get_selection():
     """
@@ -153,11 +108,6 @@ class EnumerateWindow(WPFWindow):
             self.parameterToSort.Text = my_config.parameter_to_sort = ""
 
         try:
-            self.parameterToSort.Text = str(my_config.parameter_to_sort)
-        except:
-            self.parameterToSort.Text = my_config.parameter_to_sort = ""
-
-        try:
             self.parameterToSet.Text = str(my_config.parameter_to_set)
         except:
             self.parameterToSet.Text = my_config.parameter_to_set = ""
@@ -173,14 +123,29 @@ class EnumerateWindow(WPFWindow):
         my_config.text_format = self.textFormat.Text
         my_config.leading_zeros = self.leadingZeros.Text
         my_config.parameter_to_sort = self.parameterToSort.Text
-        my_config.parameter_to_sort = self.parameterToSort.Text
         my_config.parameter_to_set = self.parameterToSet.Text
         my_config.is_reversed = self.isReversed.IsChecked
         script.save_config()
+    #
+    # def parameterToSort_changed(self, sender, args):
+    #     if sender.SelectedItem == "<Along curve>":
+    #         forms.alert("Select curve to sort along")
+    #         self.Hide()
+    #         try:
+    #             chain, chain_is_reversed = pick_chain(True)
+    #         except Exception as exc:
+    #             logger.error(exc)
+    #         self.Show()
+    #         logger.info(chain)
+    #         logger.info(chain_is_reversed)
+    #     elif sender.SelectedItem == "---" and self.parameterToSort.Text != "---":
+    #         self.parameterToSort.Text = self.parameterToSort.Text
 
     @property
     def parameter_to_sort(self):
         p = self.parameterToSort.Text
+        if not self.parameterToSort or self.parameterToSort.Text == "":
+            return
         if type(p) == str and p in self.extra_geom_keys:
             return p
         else:
@@ -188,6 +153,8 @@ class EnumerateWindow(WPFWindow):
 
     @property
     def parameter_to_set(self):
+        if not self.parameterToSet or self.parameterToSet.Text == "":
+            return
         p = self.parameters_editable[self.parameterToSet.Text]
         return p
 
@@ -219,6 +186,11 @@ class EnumerateWindow(WPFWindow):
         return self.isReversed.IsChecked
 
     def run(self, sender, args):
+        # print(dir(self))
+        if not(self.parameter_to_sort and  self.parameter_to_sort != "" and self.parameter_to_set and  self.parameter_to_set != ""):
+            forms.alert("Error! All the parameters should be set")
+            return
+
         result = self.sort(self.selection, self.parameter_to_sort, self.is_reversed)
         i = self.start_from
         text_format = self.text_format
@@ -241,6 +213,8 @@ class EnumerateWindow(WPFWindow):
         my_config.start_from = i
 
         self.write_config()
+        self.Close()
+
 
     def sort(self, elements, parameter_to_sort, reverse=False):
         param_dict = self.element_parameter_dict(elements, parameter_to_sort)
@@ -248,28 +222,31 @@ class EnumerateWindow(WPFWindow):
         return param_dict_sorted
         # return map(lambda x: x[0], param_dict_sorted)
 
+
     def element_parameter_dict(self, elements, parameter_to_sort):
         result = {}
+        chain, chain_is_reversed = (None, None)
         if parameter_to_sort == "<Along curve>":
-            # lines = picklines()
-            ids_a = [662032, 662063, 662123, 662149, 662203, 662236, 662281]
-            ids_b = [662349]
-            lines = pick_chain(True)
-
-
+            forms.alert("Select curve to sort along")
+            self.Hide()
+            try:
+                chain, chain_is_reversed = pick_chain(True)
+            except Exception as exc:
+                logger.error(exc)
+            self.Show()
+            logger.info(chain)
+            logger.info(chain_is_reversed)
 
         for e in elements:
             if type(parameter_to_sort) == str:
                 if parameter_to_sort[0] == "<" and parameter_to_sort[2:] == " coordinate>":
                     parameter_loc = parameter_to_sort[1]
-                    loc = e.Location
-                    v = getattr(loc.Point, parameter_loc)
-                elif parameter_to_sort == "<Along curve>":
-                    logger.error("<Along curve>")
-                    loc = e.Location
-                    for c in lines:
-                        v = c.GeometryCurve.Project(loc.Point).Parameter
-                        print(v)
+                    loc_point = e.Location.Point
+                    v = getattr(loc_point, parameter_loc)
+                elif parameter_to_sort == "<Along curve>" and chain:
+                    logger.debug("<Along curve>")
+                    loc_point = e.Location.Point
+                    v = chain_closest_point(loc_point, chain, chain_is_reversed)
                 else:
                     logger.error("Parameter error")
                     return
@@ -440,6 +417,7 @@ class EnumerateWindow(WPFWindow):
 
 
 def main():
+    global wpf_window
     # Input
     sel = get_selection()
     if not sel:
@@ -450,7 +428,10 @@ def main():
         logger.error('At least 2 elements or views must be selected.')
         return
 
-    EnumerateWindow('window.xaml', sel).ShowDialog()
+    wpf_window = EnumerateWindow('window.xaml', sel)
+    # print(dir(wpf_window))
+    wpf_window.show(True)
+    # print(dir(wpf_window))
 
 
 if __name__ == "__main__":

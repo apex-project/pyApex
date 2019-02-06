@@ -14,7 +14,6 @@ selection = revit.get_selection()
 
 
 def pick_chain(find_chain=False):
-    # try:
     last_selection = selection.element_ids
     selected_curve = revit.pick_element("Select curves to sort by")
 
@@ -25,7 +24,7 @@ def pick_chain(find_chain=False):
     logger.info("selected_curve: %s" % str(selected_curve.Id))
 
     try:
-        _geom_curve = selected_curve.GeometryCurve
+        selected_curve.GeometryCurve
     except:
         forms.alert("Selected element is not a Curve.\nOr it have no GeometryCurve parameter")
         return None, None
@@ -43,19 +42,6 @@ def pick_chain(find_chain=False):
             return selection_list_sorted, selection_list_sorted_isreversed
     logger.info("Sselected_curve: %s" % [selected_curve.Id])
     return [selected_curve.Id], None
-
-    # except Exception as exc:
-    #     logger.error(exc)
-    #     pass
-
-
-# def closest_point(chain, point):
-#     parameter_sum = 0
-#     for c in chain:
-
-
-def _hashset_to_list(hset):
-    return list(map(lambda x: x, hset))
 
 
 def _sort_joined_curves_run(curve, end=0):
@@ -95,57 +81,6 @@ def _sort_joined_curves_run(curve, end=0):
         curves = map(lambda x: doc.GetElement(x),
                      doc.GetElement(c_id).GetAdjoinedCurveElements(_end))
 
-    # while len(curves) > 0 and i < 100:
-    #     c = curves[0]
-    #     logger.info("%d %d %d" % (i, _end, c.Id.IntegerValue))
-    #     if c.Id not in result_ids:
-    #         result_ids.append(c.Id)
-    #         result.append(c)
-    #         # direction_changed = False
-    #     else:
-    #         break
-    #         # if direction_changed:
-    #         #     break
-    #         # else:
-    #         #     _end = int(not(_end))
-    #         #     direction_changed = True
-    #         #     continue
-    #
-    #     curves = map(lambda x: doc.GetElement(x), c.GetAdjoinedCurveElements(_end))
-    #     logger.info(map(lambda x: x.Id.IntegerValue, curves))
-    #     #
-    #     # # on the first iteration check if something in another direction
-    #     # if i == 0 and len(curves) == 0: #  and _end == end
-    #     #     logger.info("i == 0 and len(curves) == 0 and end == 0")
-    #     #     _end = not(_end)
-    #     #     curves = map(lambda x: doc.GetElement(x), c.GetAdjoinedCurveElements(_end))
-    #
-    #     curves = _hashset_to_list(curves)
-    #     if len(curves) > 0:
-    #         new_end_point_a = curves[0].GeometryCurve.GetEndPoint(_end)
-    #         new_end_point_b = curves[0].GeometryCurve.GetEndPoint(int(not _end))
-    #
-    #         if pyu.compare_xyz(new_end_point_a, last_end_point):
-    #             # curves = map(lambda x: doc.GetElement(x), c.GetAdjoinedCurveElements(int(not _end)))
-    #             # curves = _hashset_to_list(curves)
-    #             last_end_point = curves[0].GeometryCurve.GetEndPoint(int(not _end))
-    #             _end = not _end
-    #         else:
-    #             last_end_point = curves[0].GeometryCurve.GetEndPoint(_end)
-    #
-    #     #         logger.info("%s = %s" % (new_end_point0.ToString(), last_end_point0.ToString()))
-    #     #         logger.info("or %s = %s" % (new_end_point1.ToString(), last_end_point1.ToString()))
-    #     #         _end = int(not _end)
-    #     #         # logger.info("pyu.compare_xyz(new_end_point, last_end_point)")
-    #     #         # curves = map(lambda x: doc.GetElement(x), c.GetAdjoinedCurveElements(int(not _end)))
-    #     #         last_end_point0 = _curves[0].GeometryCurve.GetEndPoint(1)
-    #     #         last_end_point1 = _curves[0].GeometryCurve.GetEndPoint(0)
-    #     #     else:
-    #     #         last_end_point0 = new_end_point0
-    #     #         last_end_point1 = new_end_point1
-
-        # curves = _hashset_to_list(curves)
-
         i += 1
     print(result_reversed)
     result_curves = []
@@ -157,54 +92,20 @@ def _sort_joined_curves_run(curve, end=0):
             c = c.CreateReversed()
         result_curves.append(c)
     return result_ids, result_reversed
-    # return map(lambda x: doc.GetElement(x), result_ids)
 
 
 def _find_curve_chain(curve):
     result, result_is_reversed = _sort_joined_curves_run(curve, 1)
-    logger.info("Result 1")
-    # logger.info(map(lambda x: x.Id.IntegerValue, result))
-
-    # another direction
     result_2, result_is_reversed_2 = _sort_joined_curves_run(curve, 0)
 
-    logger.info("Result 2")
-    # logger.info(map(lambda x: x.Id.IntegerValue, result_2))
+    # combine result
     if len(result_2) > 1:
         result_2 = list(reversed(result_2))[:-1]
         result_is_reversed_2 = list(reversed(result_is_reversed_2))[:-1]
         result = list(itertools.chain(result_2, result))
         result_is_reversed = list(itertools.chain(result_is_reversed_2, result_is_reversed))
 
-    logger.info("Result 3")
-    # logger.info(map(lambda x: x.Id.IntegerValue, result))
     return result, result_is_reversed
-
-
-def _normalise_chain_direction(chain):
-    chain = list(map(lambda x: x.GeometryCurve, chain))
-    if len(chain) <= 1:
-        return chain
-    print(len(chain))
-    result = []
-    for i in range(len(chain)):
-        was_reversed = False
-        if i == 0:
-            # fix direction for first curve
-            if pyu.compare_xyz(chain[i].GetEndPoint(0), chain[i+1].GetEndPoint(1)) \
-                    or pyu.compare_xyz(chain[i].GetEndPoint(0), chain[i+1].GetEndPoint(0)):
-                chain[i] = chain[i].CreateReversed()
-                was_reversed = True
-        else:
-            # fix current curve
-            if pyu.compare_xyz(chain[i-1].GetEndPoint(1), chain[i].GetEndPoint(1)):
-                chain[i] = chain[i].CreateReversed()
-                was_reversed = True
-        result.append(was_reversed)
-
-    print("result")
-    print(result)
-    return chain
 
 
 def chain_closest_point(point, chain, chain_is_reversed):
