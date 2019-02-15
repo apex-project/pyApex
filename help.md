@@ -135,6 +135,18 @@ Copying filter overrides from selected or active view to chosen view templates. 
 
 ---
 
+### Flip Grid Ends
+
+###### EN 
+
+Flip visibility of bubbles at the ends of selected grids. If both bubbles were visible ony one lefts.
+
+###### RU
+
+Переключает отображения кружочков для выделенных осей. Если у оси были видимы оба кружочка, будет отображаться только один
+
+---
+
 ### Text Notes 2 CSV
 
 ###### EN
@@ -153,17 +165,6 @@ Export all textnotes content to csv.
 
 > Если ничего не выбрано, поиск будет выполняться по всем видам в проекте. Если выбран Лист, поиск будет выполняться как на листе, так и на видах, размещенных на листе
 
----
-
-### Flip Grid Ends
-
-###### EN 
-
-Flip visibility of bubbles at the ends of selected grids. If both bubbles were visible ony one lefts.
-
-###### RU
-
-Переключает отображения кружочков для выделенных осей. Если у оси были видимы оба кружочка, будет отображаться только один
 
 ## 4. Misc
 
@@ -207,11 +208,53 @@ Changes appearance of all project materials to 'white' and back. Useful for pape
 You can set default material (White) and exceptions (Glass, Wood etc.) in command config (run with Shift-click)
 
 ###### RU
-1
+
 Изменяет отображение всех материалов в проекте на 'белый'. Удобно для создание 'бумажных' визуализаций.
 
 Для выбора имени материла по-умолчанию и настроек исключений (например, стекло или дерево), запустите с зажатым Shift
 
+---
+
+### Copy between Docs
+
+###### EN
+
+Copy selection from active document to another opened document. In case of geometry it uses origin-to-origin alignment
+
+> Context: elements should be selected
+
+###### RU
+
+Копирует выбранные элементы из активного документа в другой открытй документ
+При копировании геометрии используется выравнивание по нулю проекта
+
+> Контекст: необходимо выбрать элементы для копирования
+
+---
+
+### Copy parameter
+
+###### EN
+
+Set value of one parameter to another one. Works with selected element or elements.
+
+###### RU
+
+Записывает значение одного параметра в другой параметр выбранного элемента(ов).
+
+---
+
+### Replace text
+
+###### EN
+
+Find and replace text parameter for selected elements.
+
+###### RU
+
+Находит и заменяет текстовые параметры для выделенных элементов
+
+---
 
 ### Show Dependent
 
