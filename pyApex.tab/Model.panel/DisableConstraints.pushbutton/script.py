@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 __title__ = 'Disable\nConstraints'
 
-__doc__ = """Disable all Constraints in the project (all locked dimensions)."""
+__doc__ = """Disable all Constraints in the project (all locked dimensions). 
+Shift+Click - recover from previous run"""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#disable-constraints"
 
@@ -35,20 +36,21 @@ def get_datafile(reverse):
             else:
                 append_mode = True
 
-        f = open(datafile, 'r')
-        saved_list = pickle.load(f)
-        f.close()
+        if append_mode:
+            f = open(datafile, 'r')
+            saved_list = pickle.load(f)
+            f.close()
 
     # remove duplicates
     ids = list(set(saved_list))
-    return datafile, saved_list
+    return datafile, ids
 
 
 def save(datafile, ids):
     # remove duplicates
     ids = list(set(ids))
     # write
-    f = open(datafile, 'a' if append_mode else 'w')
+    f = open(datafile, 'w')
     pickle.dump(ids, f)
     f.close()
 
@@ -60,7 +62,7 @@ def process(datafile, saved_list=[], reverse=False):
         constraints = cl.ToElements()
         constraints_to_change = filter(lambda c: c.NumberOfSegments == 0, constraints)
         constraints_to_change = list(filter(lambda c: c.IsLocked, constraints_to_change))
-        td_text = "%d locked constraints found. Disable them?" % len(constraints_to_change)
+        td_text = "%d enabled Constraints found. Disable them?" % len(constraints_to_change)
     else:
 
         td_text = "Reverse mode.\n%d saved Constraints found. Recover them?" % len(saved_list)
@@ -93,8 +95,10 @@ def process(datafile, saved_list=[], reverse=False):
         TaskDialog.Show(__title__, "Error. Changes cancelled.")
     else:
         t.Commit()
-        TaskDialog.Show(__title__,
-                        "Finished. Changed elements saved. To lock them back run the script with SHIFT button")
+        result_text = "Finished."
+        if not reverse:
+            result_text += "\nChanged elements saved. To recover then run the same script with SHIFT button"
+        TaskDialog.Show(__title__,result_text)
 
     if not is_error:
         save(datafile, saved_list)
