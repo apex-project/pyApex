@@ -4,6 +4,12 @@ An extension for [pyRevit](http://eirannejad.github.io/pyRevit/)
 
 https://apex-project.github.io/pyApex
 
+## Updates:
+
+**2019-02-21** New feature: Remove and recover constraints
+
+**2019-02-06** New features: Copy between docs, Sort elements along curve (Sort and Enumerate script)
+
 ## Features
 
 ![pyApex](https://raw.githubusercontent.com/apex-project/pyApex/gh-pages/assets/img/pyApex_buttons.png)
