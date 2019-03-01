@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
+# pylint: skip-file
+import clr
+import os
+import os.path as op
+import pickle as pl
+
+from System.Collections.Generic import List
+from Autodesk.Revit.DB import *
+
+from pyrevit import versionmgr
+
+
 __title__ = 'Copy VG filters'
+__helpurl__ = "https://apex-project.github.io/pyApex/help#copy-vg-filters"
 __doc__ = """Copying filter overrides from selected or active view to chosen view templates. 
 If VG override for this filter already exists in a template it will be updated.
 
@@ -11,36 +24,18 @@ Context: Select or activate a view
 Контекст: Выбранный или активный вид
 """
 
-__helpurl__ = "https://apex-project.github.io/pyApex/help#copy-vg-filters"
+PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
-import clr
-import os
-import os.path as op
-import pickle as pl
-
-from System.Collections.Generic import List
-from Autodesk.Revit.DB import *
-
-try:
-    from pyrevit.versionmgr import PYREVIT_VERSION
-except:
-    from pyrevit import versionmgr
-
-    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
-
-pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
-
-if pyRevitNewer44:
+# if pyrevit is newer than 4.5 (major.minor)
+if PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5:
     from pyrevit import script, revit
     from pyrevit.forms import SelectFromList
-
+    from pyrevit.revit import doc, uidoc, selection
     output = script.get_output()
     logger = script.get_logger()
     linkify = output.linkify
-    from pyrevit.revit import doc, uidoc, selection
-
     selection = selection.get_selection()
-
+# otherwise use the older pyrevit api
 else:
     from scriptutils import logger
     from scriptutils.userinput import SelectFromList
@@ -53,9 +48,7 @@ class CheckBoxOption:
     def __init__(self, name, id, sel_set=[], default_state=False):
         self.name = name
         self.id = id
-
         self.state = default_state
-
         if int(self.id.ToString()) in sel_set:
             self.state = True
 
@@ -69,15 +62,15 @@ class CheckBoxOption:
         return self.state
 
 
-usertemp = os.getenv('Temp')
-prjname = op.splitext(op.basename(doc.PathName))[0]
+USER_TEMP = os.getenv('Temp')
+PROJECT_NAME = op.splitext(op.basename(doc.PathName))[0]
 
-datafile = usertemp + '\\' + prjname + '_pyChecked_Templates.pym'
-logger.info(datafile)
+DATAFILE = USER_TEMP + '\\' + PROJECT_NAME + '_pyChecked_Templates.pym'
+logger.debug(DATAFILE)
 
 sel_set = []
 
-allowed_types = [
+ALLOWED_TYPES = [
     ViewPlan,
     View3D,
     ViewSection,
@@ -88,9 +81,8 @@ allowed_types = [
 
 def read_checkboxes_state():
     try:
-        f = open(datafile, 'r')
-        cursel = pl.load(f)
-        f.close()
+        with open(DATAFILE, 'r') as filter_element: 
+            cursel = pl.load(filter_element)
 
         sel_set = []
         for elId in cursel:
@@ -103,41 +95,41 @@ def read_checkboxes_state():
 
 def save_checkboxes_state(checkboxes):
     selected_ids = {c.Id.IntegerValue.ToString() for c in checkboxes}
-    f = open(datafile, 'w')
-    pl.dump(selected_ids, f)
-    f.close()
+    with open(DATAFILE, 'w') as filter_element: 
+        pl.dump(selected_ids, filter_element)
 
 
 def get_filter_rules(doc):
-    cl = FilteredElementCollector(doc).WhereElementIsNotElementType()
-    els = cl.OfClass(type(ElementInstance)).ToElementIds()
-    return els
+    return FilteredElementCollector(doc).WhereElementIsNotElementType()\
+                                        .OfClass(type(ElementInstance))\
+                                        .ToElementIds()
 
 
 def get_view_templates(doc, view_type=None, sel_set=sel_set):
-    cl_view_templates = FilteredElementCollector(doc).WhereElementIsNotElementType()
-    allview_templates = cl_view_templates.OfCategory(BuiltInCategory.OST_Views).ToElementIds()
+    allview_templates = \
+        FilteredElementCollector(doc).WhereElementIsNotElementType()\
+                                     .OfCategory(BuiltInCategory.OST_Views)\
+                                     .ToElementIds()
 
-    vt_list = []
+    viewtemplate_list = []
     for vtId in allview_templates:
         vt = doc.GetElement(vtId)
         if vt.IsTemplate:
             if view_type is None or vt.ViewType == view_type:
-                vt_list.append(vt)
-    return vt_list
+                viewtemplate_list.append(vt)
+    return viewtemplate_list
 
 
-def get_view_filters(doc, v):
+def get_view_filters(doc, view):
     result = []
-    ftrs = v.GetFilters()
-    for fId in ftrs:
-        f = doc.GetElement(fId)
-        result.append(f)
+    for filter_id in view.GetFilters():
+        filter_element = doc.GetElement(filter_id)
+        result.append(filter_element)
     return result
 
 
 def get_active_view():
-    if type(doc.ActiveView) != View:
+    if isinstance(doc.ActiveView, View):
         active_view = doc.ActiveView
     else:
         if len(selected_ids) == 0:
@@ -146,7 +138,7 @@ def get_active_view():
 
         active_view = doc.GetElement(selected_ids[0])
 
-        if type(active_view) not in allowed_types:
+        if not isinstance(active_view, ALLOWED_TYPES):
             logger.error('Selected view is not allowed. Please select or open view from which '
                          'you want to copy template settings VG Overrides - Filters')
             return
@@ -159,17 +151,15 @@ def main():
         logger.warning('Activate a view to copy')
         return
 
-    logger.info('Source view selected: %s id%s' % (active_view.Name, active_view.Id.ToString()))
+    logger.debug('Source view selected: %s id%s' % (active_view.Name, active_view.Id.ToString()))
 
-    """
-    Filters selection
-    """
+    # Filters selection =======================================================
     active_template_filters_ch = get_view_filters(doc, active_view)
 
     sel_set = read_checkboxes_state()
-    vt_list = get_view_templates(doc, sel_set=sel_set)
+    viewtemplate_list = get_view_templates(doc, sel_set=sel_set)
 
-    if not vt_list:
+    if not viewtemplate_list:
         logger.warning('Project has no view templates')
         return
 
@@ -177,9 +167,15 @@ def main():
         logger.warning('Active view has no filter overrides')
         return
 
-    filter_checkboxes = SelectFromList.show(active_template_filters_ch, name_attr='Name',
-                                            title='Select filters to copy',
-                                            button_name='Select filters', multiselect=True)
+    filter_checkboxes = \
+        SelectFromList.show(
+            active_template_filters_ch,
+            name_attr='Name',
+            title='Select filters to copy',
+            button_name='Select filters',
+            multiselect=True
+        ) or []
+
     filter_checkboxes_sel = []
 
     # Select filters from active view
@@ -190,10 +186,8 @@ def main():
     if not filter_checkboxes_sel:
         return
 
-    """
-    Target view templates selection
-    """
-    view_checkboxes = SelectFromList.show(vt_list, name_attr='Name', title='Select templates to apply filters',
+    # Target view templates selection =========================================
+    view_checkboxes = SelectFromList.show(viewtemplate_list, name_attr='Name', title='Select templates to apply filters',
                                           button_name='Apply filters to templates', multiselect=True)
     view_checkboxes_sel = []
 
@@ -217,24 +211,23 @@ def main():
             logger.debug('Current template found')
             continue
 
-        for f in filter_checkboxes_sel:
+        for filter_element in filter_checkboxes_sel:
             try:
-                vt.RemoveFilter(f.Id)
-                logger.info('filter %s deleted from template %s' % (f.Id.IntegerValue.ToString(), vt.Name))
+                vt.RemoveFilter(filter_element.Id)
+                logger.debug('filter %s deleted from template %s' % (filter_element.Id.IntegerValue.ToString(), vt.Name))
             except:
                 pass
 
             try:
-                fr = active_view.GetFilterOverrides(f.Id)
-                vt.SetFilterOverrides(f.Id, fr)
+                fr = active_view.GetFilterOverrides(filter_element.Id)
+                vt.SetFilterOverrides(filter_element.Id, fr)
             except Exception as e:
-                logger.warning('filter %s was not aplied to view %s\n%s' % (f.Id.IntegerValue.ToString(),
+                logger.warning('filter %s was not aplied to view %s\n%s' % (filter_element.Id.IntegerValue.ToString(),
                                                                             vt.Name, e))
 
     t.Commit()
 
     print("Completed")
-
 
 if __name__ == "__main__":
     main()
