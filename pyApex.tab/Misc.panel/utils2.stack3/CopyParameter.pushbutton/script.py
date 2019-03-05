@@ -7,9 +7,7 @@ __doc__ = """Set value of one parameter to another one. Works with selected elem
 __helpurl__ = "https://apex-project.github.io/pyApex/help#copy-paramter"
 
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
-from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType
-
-from Autodesk.Revit.DB import Transaction, TransactionGroup
+from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType,Transaction, TransactionGroup
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
@@ -102,13 +100,41 @@ class CopyParameterWindow(WPFWindow):
 
     @property
     def parameter_to_get(self):
-        p = self.parameters_editable[self.parameterToGet.Text]
+        p = self.parameters_dict[self.parameterToGet.Text]
         return p
 
     @property
     def parameter_to_set(self):
         p = self.parameters_editable[self.parameterToSet.Text]
         return p
+
+    def parameter_value_get(self, parameter):
+        if not parameter.HasValue:
+            return
+
+        if parameter.StorageType == StorageType.Double or parameter.StorageType == StorageType.ElementId :
+            x = parameter.AsValueString()
+        elif parameter.StorageType == StorageType.Integer:
+            x = int(parameter.AsInteger())
+        else:
+            try:
+                x = float(parameter.AsString().strip().replace(",", "."))
+            except:
+                x = parameter.AsString()
+        return x
+
+    def parameter_value_set(self, parameter, parameter_get):
+        if parameter_get.StorageType != parameter.StorageType:
+            value = self.parameter_value_get(parameter_get)
+        else:
+            value = parameter_get.value
+
+        if parameter.StorageType == parameter_get.StorageType:
+            parameter.Set(value)
+        elif parameter.StorageType == StorageType.Double or parameter.StorageType == StorageType.Integer:
+            parameter.SetValueString(value)
+        else:
+            parameter.Set(str(value))
 
     def run(self, sender, args):
         count_changed = 0
@@ -122,7 +148,7 @@ class CopyParameterWindow(WPFWindow):
             param = e.get_Parameter(definition_set)
             param_get = e.get_Parameter(definition_get)
             if param.AsString() != '' and param.AsString() != None and param.AsString() != param_get.AsString():
-                not_empty_list.append("Target: %s, Source: %s" % (str(param.AsString()), str(param_get.AsString())))
+                not_empty_list.append("Target: %s, Source: %s" % (self.parameter_value_get(param), self.parameter_value_get(param_get)))
 
                 skip_ids.append(e.Id)
 
@@ -132,7 +158,7 @@ class CopyParameterWindow(WPFWindow):
             if len_not_empty_list > len_limit:
                 not_empty_list = not_empty_list[:len_limit] + [' + %d more...' % (len_not_empty_list - len_limit)]
 
-            text = "%d elements have values already. Replace them?:" % len_not_empty_list + "\n".join(not_empty_list)
+            text = "%d elements have values already. Replace them?\n" % len_not_empty_list + "\n".join(not_empty_list)
             a = TaskDialog.Show(__title__, text,
                                 TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No)
             if str(a) == "Yes":
@@ -148,11 +174,13 @@ class CopyParameterWindow(WPFWindow):
             param = e.get_Parameter(definition_set)
             param_get = e.get_Parameter(definition_get)
 
-            if param.AsString() == param_get.AsString():
-                continue
-
-
-            self.parameter_value_set(param, param_get.AsString())
+            if param.StorageType == param_get.StorageType:
+                if param.Value == param_get.Value:
+                    continue
+            else:
+                if self.parameter_value_get(param) == self.parameter_value_get(param_get):
+                    continue
+            self.parameter_value_set(param, param_get)
             count_changed += 1
 
         self.write_config()
@@ -182,27 +210,6 @@ class CopyParameterWindow(WPFWindow):
                 result[e] = v
 
         return result
-
-    def parameter_value_get(self, parameter):
-        if not parameter.HasValue:
-            return
-
-        if parameter.StorageType == StorageType.Double:
-            x = float(parameter.AsDouble())
-        elif parameter.StorageType == StorageType.Integer:
-            x = int(parameter.AsInteger())
-        else:
-            try:
-                x = float(parameter.AsString().strip().replace(",", "."))
-            except:
-                x = parameter.AsString()
-        return x
-
-    def parameter_value_set(self, parameter, value):
-        if parameter.StorageType == StorageType.Double or parameter.StorageType == StorageType.Integer:
-            parameter.SetValueString(value)
-        else:
-            parameter.Set(str(value))
 
     def get_selection_parameters(self, elements):
         """
