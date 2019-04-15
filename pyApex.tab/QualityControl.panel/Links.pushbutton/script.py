@@ -11,15 +11,18 @@ __title__ = 'Links'
 __helpurl__ = "https://apex-project.github.io/pyApex/help#links"
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
-    pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
+
+    pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 
 except:
     from pyrevit import versionmgr
+
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
     pyRevitNewer44 = True
 
 if pyRevitNewer44:
     from pyrevit import script, revit
+
     logger = script.get_logger()
     output = script.get_output()
     linkify = output.linkify
@@ -29,6 +32,7 @@ if pyRevitNewer44:
 else:
     from scriptutils import logger
     from scriptutils import this_script
+
     linkify = this_script.output.linkify
     uidoc = __revit__.ActiveUIDocument
     doc = uidoc.Document
@@ -40,6 +44,7 @@ import os
 
 cl = FilteredElementCollector(doc).WhereElementIsElementType()
 selection = cl.OfCategory(BuiltInCategory.OST_RvtLinks).ToElementIds()
+
 
 def file2ws_name(filename):
     symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
@@ -105,7 +110,6 @@ class CheckPinned(Check):
         t.Start()
         for vv in self.errors.values():
             for e in vv:
-                
                 e.Pinned = True
         t.Commit()
 
@@ -170,8 +174,10 @@ class CheckWorkset(Check):
     def check_one(self, e, k):
         ws_name = self.all_worksets[e.WorksetId.IntegerValue]
         m = re.match(self.allowed_pattern, ws_name, re.I)
+        ws_name_type = self.all_worksets[doc.GetElement(e.GetTypeId()).WorksetId.IntegerValue]
+        m_type = re.match(self.allowed_pattern, ws_name_type, re.I)
         is_nested = doc.GetElement(e.GetTypeId()).IsNestedLink
-        if not m and not is_nested:
+        if (not m or not m_type) and not is_nested:
             t = doc.GetElement(k)
             filename = t.get_Parameter(BuiltInParameter.ALL_MODEL_TYPE_NAME).AsString()
             ws_name_new = file2ws_name(filename)
@@ -204,12 +210,15 @@ class CheckWorkset(Check):
                     continue
 
                 wsparam = e.get_Parameter(BuiltInParameter.ELEM_PARTITION_PARAM)
-
                 if (wsparam == None):
                     continue
-
                 wsparam.Set(all_worksets_inv[ws_name_new])
-        
+                # Update type workset
+                wsparam = doc.GetElement(e.GetTypeId()).get_Parameter(BuiltInParameter.ELEM_PARTITION_PARAM)
+                if (wsparam == None):
+                    continue
+                wsparam.Set(all_worksets_inv[ws_name_new])
+
         t.Commit()
 
 
@@ -235,12 +244,14 @@ def collect_links():
 
     return links
 
+
 def main():
     links = collect_links()
     if doc.IsWorkshared:
         CheckWorkset(links).run()
     CheckPinned(links).run()
     CheckShared(links).run()
+
 
 if __name__ == '__main__':
     main()
