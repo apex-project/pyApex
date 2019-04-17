@@ -6,6 +6,8 @@ https://apex-project.github.io/pyApex
 
 ## Updates:
 
+**2019-04-17** New feature: link many DWG, RVT or IFC at once (Link more). Beta
+
 **2019-02-21** New feature: Remove and recover constraints
 
 **2019-02-06** New features: Copy between docs, Sort elements along curve (Sort and Enumerate script)
