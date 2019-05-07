@@ -200,6 +200,22 @@ Useful for placing General Plan dwg files with absolute coordinates.
 
 ---
 
+### Exclude grouped
+
+###### EN
+
+Exclude grouped elements from selection
+
+Shift+Click - isolate grouped elements
+
+###### RU
+
+Исключает из выделения элементы, являющиеся частью групп.
+
+Shift+Click - оставить выбранными только сгруппированные элементы
+
+---
+
 ### White Materials
 
 ###### EN
