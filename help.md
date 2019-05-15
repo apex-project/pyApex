@@ -272,6 +272,20 @@ Find and replace text parameter for selected elements.
 
 ---
 
+### Link more
+
+###### EN
+
+Links (not import) more that one RVT, IFC or CAD-formats at one click.
+
+> In development
+
+###### RU
+
+Позволяет вставить несколько связей Revit, IFC или CAD за один клик.
+
+---
+
 ### Show Dependent
 
 ###### EN
