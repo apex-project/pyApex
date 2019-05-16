@@ -55,6 +55,10 @@ def save(datafile, ids):
     f.close()
 
 
+def IsGrouped(element):
+    return element.GroupId.IntegerValue != -1
+
+
 def process(datafile, saved_list=[], reverse=False):
 
     if not reverse:
@@ -62,7 +66,14 @@ def process(datafile, saved_list=[], reverse=False):
         constraints = cl.ToElements()
         constraints_to_change = filter(lambda c: c.NumberOfSegments == 0, constraints)
         constraints_to_change = list(filter(lambda c: c.IsLocked, constraints_to_change))
+
+        constraints_grouped = list(filter(lambda c: IsGrouped(c), constraints_to_change))
+        constraints_to_change = list(filter(lambda c: not IsGrouped(c), constraints_to_change))
+        
         td_text = "%d enabled Constraints found. Disable them?" % len(constraints_to_change)
+
+        if (len(constraints_grouped) > 0):
+            td_text += ("\n(%d Constraints are in groups, they will not be affected)" % len(constraints_grouped))
     else:
 
         td_text = "Reverse mode.\n%d saved Constraints found. Recover them?" % len(saved_list)
