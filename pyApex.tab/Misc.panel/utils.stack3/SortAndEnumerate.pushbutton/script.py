@@ -214,7 +214,10 @@ class EnumerateWindow(WPFWindow):
         my_config.start_from = i
 
         # selection_doc.set self.selection
-        self.write_config()
+        try:
+            self.write_config()
+        except:
+            pass
         logger.debug("run - set_to", map(lambda e: e[0].Id.IntegerValue, result))
         selection_pyr.set_to(map(lambda e: e[0].Id, result))
         self.Close()
