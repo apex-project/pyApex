@@ -11,10 +11,11 @@ pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 if pyRevitNewer44:
     from pyrevit import script
     from pyrevit.forms import WPFWindow, alert
-
+    logger = script.get_logger()
     my_config = script.get_config()
 else:
     from scriptutils import this_script as script
+    from scriptutils import logger
     from scriptutils.userinput import WPFWindow, pick_folder
     my_config = script.config
 
@@ -57,16 +58,18 @@ class WhiteMaterialsConfigWindow(WPFWindow):
     def save_options(self, sender, args):
         errors = []
         try:
-            my_config.exceptions = pau.str2list(self.exceptions.Text)
+            my_config.exceptions = pau.str2list(self.exceptions.Text.encode('utf-8'))
         except:
             errors.append("Exceptions value is invalid")
 
         try:
             v = self.material.Text
             assert len(v) >= 0
-            my_config.material = v
-        except:
+
+            my_config.material = v.encode('utf-8')
+        except Exception as exc:
             errors.append("Material name is invalid")
+            logger.debug(exc)
 
         try:
             my_config.ignore_transparent = bool(self.ignore_transparent.IsChecked)

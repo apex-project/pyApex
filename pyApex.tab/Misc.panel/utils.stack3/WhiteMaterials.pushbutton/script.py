@@ -8,6 +8,7 @@ You can set default material (White) and exceptions (Glass, Wood etc.) in comman
 
 __title__ = 'White Materials'
 __helpurl__ = "https://apex-project.github.io/pyApex/help#white-materials"
+__context__ = 'Selection'
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
@@ -185,6 +186,8 @@ def main():
         else:
             selected_switch = CommandSwitchWindow(options,
                                                        message='Select direction').pick_cmd_switch()
+        if not selected_switch:
+            return
 
         if selected_switch == "Revert original":
             reverse = True

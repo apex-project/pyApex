@@ -5,6 +5,7 @@ __doc__ = """Set value of one parameter to another one. Works with selected elem
 Записывает значение одного параметра в другой параметр выбранного элемента(ов)."""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#copy-paramter"
+__context__ = 'Selection'
 
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType,Transaction, TransactionGroup
@@ -90,8 +91,8 @@ class CopyParameterWindow(WPFWindow):
             self.parameterToSet.Text = my_config.parameter_to_set = ""
 
     def write_config(self):
-        my_config.parameter_to_get = self.parameterToGet.Text
-        my_config.parameter_to_set = self.parameterToSet.Text
+        my_config.parameter_to_get = self.parameterToGet.Text.encode('utf-8')
+        my_config.parameter_to_set = self.parameterToSet.Text.encode('utf-8')
         script.save_config()
 
     def _set_comboboxes(self):
