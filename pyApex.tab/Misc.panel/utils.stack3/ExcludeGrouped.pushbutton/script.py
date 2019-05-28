@@ -3,7 +3,7 @@ __title__ = 'Exclude Grouped'
 __doc__ = """Exclude grouped elements from selection
 
 Shift+Click - isolate grouped elements"""
-
+__context__ = 'Selection'
 __helpurl__ = "https://apex-project.github.io/pyApex/help#exclude-grouped"
 
 from pyrevit import revit

@@ -8,7 +8,6 @@ You can set default material (White) and exceptions (Glass, Wood etc.) in comman
 
 __title__ = 'White Materials'
 __helpurl__ = "https://apex-project.github.io/pyApex/help#white-materials"
-__context__ = 'Selection'
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
