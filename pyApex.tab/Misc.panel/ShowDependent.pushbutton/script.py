@@ -45,6 +45,18 @@ def config_limit():
 
     return v
 
+def config_ignore_selected():
+    try:
+        v = my_config.ignore_selected
+    except:
+        import show_dependent_defaults as cdef
+        v = cdef.ignore_selected
+
+        my_config.ignore_selected = v
+        script.save_config()
+
+    return v
+
 
 def all_levels():
     cl = FilteredElementCollector(doc)
@@ -163,6 +175,7 @@ def level_dependent():
 def selection_dependent():
     """By selection"""
     sel = selection.elements
+    
     if not len(sel):
         alert("Nothing selected")
         return
@@ -171,15 +184,15 @@ def selection_dependent():
     for e in sel:
         t = Transaction(doc, "Check selection " + str(e.Id.IntegerValue))
         t.Start()
-        elements = doc.Delete(e.Id)
+        deleted_ids = doc.Delete(e.Id)
         t.RollBack()
         try:
             el_type = e.Category.Name
         except:
             el_type = "Other"
-
-        elements = filter(lambda x: x != e.Id, elements)
-        results["%s, ID: %d" % (el_type, e.Id.IntegerValue)] = group_by_type(elements)
+        # Exclude selected element from result
+        deleted_ids = filter(lambda x: x != e.Id, deleted_ids)
+        results["%s, ID: %d" % (el_type, e.Id.IntegerValue)] = group_by_type(deleted_ids)
 
     return results
 
@@ -247,8 +260,11 @@ def print_elements_for_parent(result_dict, parent_name):
             ) + limited_suffix)
 
             print('\n\n')
-
-        print('{}'.format(output.linkify(list(e_ids), title='%d elements on %s' % (len(e_ids), parent_name))))
+                
+        if len(e_ids) > 0:
+            print('{}'.format(output.linkify(list(e_ids), title='%d elements on %s' % (len(e_ids), parent_name))))
+        else:
+            print('%d elements on %s' % (len(e_ids), parent_name))
 
     print("\n\n\n")
 
