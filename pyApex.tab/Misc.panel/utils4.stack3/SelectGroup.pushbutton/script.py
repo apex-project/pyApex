@@ -35,7 +35,7 @@ if __name__ == '__main__':
             ids_to_select.add(higher_group.Id)
         else:
             if __shiftclick__:
-                elements_to_select.add(e.Id)
+                elements_to_select.append(e.Id)
 
     elements_to_select += map(lambda e_id: doc.GetElement(e_id), ids_to_select)
     selection.set_to(elements_to_select)
