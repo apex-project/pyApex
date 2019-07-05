@@ -110,32 +110,75 @@ class CopyParameterWindow(WPFWindow):
         return p
 
     def parameter_value_get(self, parameter):
+        logger.debug("parameter_value_get")
         if not parameter.HasValue:
             return
 
-        if parameter.StorageType == StorageType.Double or parameter.StorageType == StorageType.ElementId :
-            x = parameter.AsValueString()
+        if parameter.StorageType == StorageType.Double:
+            logger.debug("parameter_value_get AsDouble")
+            x = parameter.AsDouble()
         elif parameter.StorageType == StorageType.Integer:
+            logger.debug("parameter_value_get AsInteger")
+            x = int(parameter.AsInteger())
+        elif parameter.StorageType == StorageType.ElementId:
+            logger.debug("parameter_value_get ElementId AsInteger")
             x = int(parameter.AsInteger())
         else:
+            return self.parameter_value_string_get(parameter)
+        return x
+        
+    def parameter_value_string_get(self, parameter):
+        logger.debug("parameter_value_string_get")
+        x = None
+        try:
+            logger.debug(parameter.AsValueString())
+            x = float(parameter.AsValueString().strip().replace(",", "."))
+            logger.debug("parameter_value_string_get try1")
+
+        except:
+            pass
+        if not x:
+            try:
+                x = float(parameter.AsString().strip().replace(".", ","))
+                logger.debug("parameter_value_string_get try2")
+            except:
+                pass
+        if not x:
             try:
                 x = float(parameter.AsString().strip().replace(",", "."))
+                logger.debug("parameter_value_string_get try3")
             except:
-                x = parameter.AsString()
+                pass
+        if not x:
+            try:
+                x = float(parameter.AsString().strip().replace(".", ","))
+                logger.debug("parameter_value_string_get try4")
+            except:
+                pass
+        if not x:
+            x = parameter.AsString()
+            logger.debug("parameter_value_string_get AsString")
+            logger.debug(x)
         return x
 
     def parameter_value_set(self, parameter, parameter_get):
         if parameter_get.StorageType != parameter.StorageType:
+            value = self.parameter_value_string_get(parameter_get)
+        else:
             value = self.parameter_value_get(parameter_get)
-        else:
-            value = parameter_get.value
-
-        if parameter.StorageType == parameter_get.StorageType:
+        logger.debug(value)
+        if parameter_get.StorageType != parameter.StorageType:
+            parameter.SetValueString(str(value))
+            logger.debug("parameter.SetValueString(value)")
+        elif parameter.StorageType == parameter_get.StorageType:
             parameter.Set(value)
-        elif parameter.StorageType == StorageType.Double or parameter.StorageType == StorageType.Integer:
-            parameter.SetValueString(value)
-        else:
+            logger.debug("parameter.Set(value)")
+        elif parameter.StorageType == StorageType.String:
             parameter.Set(str(value))
+            logger.debug("parameter.Set(str(value))")
+        else:
+            logger.debug("parameter.SetValueString(value)")
+            parameter.SetValueString(value)
 
     def run(self, sender, args):
         count_changed = 0
@@ -176,12 +219,13 @@ class CopyParameterWindow(WPFWindow):
             param_get = e.get_Parameter(definition_get)
 
             if param.StorageType == param_get.StorageType:
-                if param.Value == param_get.Value:
-                    continue
-            else:
                 if self.parameter_value_get(param) == self.parameter_value_get(param_get):
                     continue
+
             self.parameter_value_set(param, param_get)
+            if __debug__:
+                p_test = self.parameter_value_get(param)
+                logger.debug(p_test)
             count_changed += 1
 
         self.write_config()
@@ -192,6 +236,7 @@ class CopyParameterWindow(WPFWindow):
         else:
             t.RollBack()
             TaskDialog.Show(__title__, "Nothing was changed")
+        logger.debug("finished")
 
     def element_parameter_dict(self, elements, parameter_to_sort):
         result = {}
