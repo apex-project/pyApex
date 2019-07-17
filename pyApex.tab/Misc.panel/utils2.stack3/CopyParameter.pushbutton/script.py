@@ -7,7 +7,7 @@ __doc__ = """Set value of one parameter to another one. Works with selected elem
 __helpurl__ = "https://apex-project.github.io/pyApex/help#copy-paramter"
 __context__ = 'Selection'
 
-from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons, TaskDialogResult
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType,Transaction, TransactionGroup
 
 try:
@@ -18,6 +18,10 @@ except:
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
 pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
+try:
+    pyRevitNewer4619 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 6 and int(PYREVIT_VERSION.metadata[1:]) >= 24
+except:
+    pyRevitNewer4619 = False
 
 if pyRevitNewer44:
     from pyrevit import script
@@ -109,8 +113,9 @@ class CopyParameterWindow(WPFWindow):
         p = self.parameters_editable[self.parameterToSet.Text]
         return p
 
-    def parameter_value_get(self, parameter):
-        logger.debug("parameter_value_get")
+    def parameter_value_get(self, parameter, conversion = True):
+        logger.debug("PARAMETER_VALUE_GET")
+        logger.debug(parameter.Definition.Name)
         if not parameter.HasValue:
             return
 
@@ -124,37 +129,38 @@ class CopyParameterWindow(WPFWindow):
             logger.debug("parameter_value_get ElementId AsInteger")
             x = int(parameter.AsInteger())
         else:
-            return self.parameter_value_string_get(parameter)
+            return self.parameter_value_string_get(parameter, conversion)
         return x
         
-    def parameter_value_string_get(self, parameter):
+    def parameter_value_string_get(self, parameter, conversion = True):
         logger.debug("parameter_value_string_get")
         x = None
-        try:
-            logger.debug(parameter.AsValueString())
-            x = float(parameter.AsValueString().strip().replace(",", "."))
-            logger.debug("parameter_value_string_get try1")
+        if conversion:
+            try:
+                logger.debug(parameter.AsValueString())
+                x = float(parameter.AsValueString().strip().replace(",", "."))
+                logger.debug("parameter_value_string_get try1")
 
-        except:
-            pass
-        if not x:
-            try:
-                x = float(parameter.AsString().strip().replace(".", ","))
-                logger.debug("parameter_value_string_get try2")
             except:
                 pass
-        if not x:
-            try:
-                x = float(parameter.AsString().strip().replace(",", "."))
-                logger.debug("parameter_value_string_get try3")
-            except:
-                pass
-        if not x:
-            try:
-                x = float(parameter.AsString().strip().replace(".", ","))
-                logger.debug("parameter_value_string_get try4")
-            except:
-                pass
+            if not x:
+                try:
+                    x = float(parameter.AsString().strip().replace(".", ","))
+                    logger.debug("parameter_value_string_get try2")
+                except:
+                    pass
+            if not x:
+                try:
+                    x = float(parameter.AsString().strip().replace(",", "."))
+                    logger.debug("parameter_value_string_get try3")
+                except:
+                    pass
+            if not x:
+                try:
+                    x = float(parameter.AsString().strip().replace(".", ","))
+                    logger.debug("parameter_value_string_get try4")
+                except:
+                    pass
         if not x:
             x = parameter.AsString()
             logger.debug("parameter_value_string_get AsString")
@@ -162,10 +168,11 @@ class CopyParameterWindow(WPFWindow):
         return x
 
     def parameter_value_set(self, parameter, parameter_get):
+        logger.debug("PARAMETER_VALUE_SET")
         if parameter_get.StorageType != parameter.StorageType:
             value = self.parameter_value_string_get(parameter_get)
         else:
-            value = self.parameter_value_get(parameter_get)
+            value = self.parameter_value_get(parameter_get, conversion=False)
         logger.debug(value)
         if parameter_get.StorageType != parameter.StorageType:
             parameter.SetValueString(str(value))
@@ -205,9 +212,8 @@ class CopyParameterWindow(WPFWindow):
             text = "%d elements have values already. Replace them?\n" % len_not_empty_list + "\n".join(not_empty_list)
             a = TaskDialog.Show(__title__, text,
                                 TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No)
-            if str(a) == "Yes":
+            if a == TaskDialogResult.Yes:
                 skip_ids = []
-
         t = Transaction(doc, __title__)
         t.Start()
 
@@ -219,7 +225,7 @@ class CopyParameterWindow(WPFWindow):
             param_get = e.get_Parameter(definition_get)
 
             if param.StorageType == param_get.StorageType:
-                if self.parameter_value_get(param) == self.parameter_value_get(param_get):
+                if self.parameter_value_get(param, conversion=False) == self.parameter_value_get(param_get, conversion=False):
                     continue
 
             self.parameter_value_set(param, param_get)
@@ -228,7 +234,9 @@ class CopyParameterWindow(WPFWindow):
                 logger.debug(p_test)
             count_changed += 1
 
-        self.write_config()
+        # TODO FIX do not write config in lower versions - risk to corrupt config
+        if pyRevitNewer4619:
+            self.write_config()
 
         if count_changed:
             t.Commit()
@@ -237,6 +245,7 @@ class CopyParameterWindow(WPFWindow):
             t.RollBack()
             TaskDialog.Show(__title__, "Nothing was changed")
         logger.debug("finished")
+        self.Close()
 
     def element_parameter_dict(self, elements, parameter_to_sort):
         result = {}
