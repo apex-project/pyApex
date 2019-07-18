@@ -7,9 +7,6 @@ __doc__ = """Set value of one parameter to another one. Works with selected elem
 __helpurl__ = "https://apex-project.github.io/pyApex/help#copy-paramter"
 __context__ = 'Selection'
 
-from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons, TaskDialogResult
-from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType,Transaction, TransactionGroup
-
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
 except:
@@ -17,30 +14,23 @@ except:
 
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
-pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
 try:
     pyRevitNewer4619 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 6 and int(PYREVIT_VERSION.metadata[1:]) >= 24
 except:
     pyRevitNewer4619 = False
 
-if pyRevitNewer44:
-    from pyrevit import script
-    from pyrevit.forms import WPFWindow, SelectFromList
 
-    logger = script.get_logger()
-    from pyrevit.revit import doc, selection
+from pyrevit import script
+from pyrevit.forms import WPFWindow, SelectFromList
+from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons, TaskDialogResult
+from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType,Transaction, TransactionGroup
+import pyapex_parameters as pyap
 
-    selection = selection.get_selection()
-    my_config = script.get_config()
-else:
-    forms = None
-    from scriptutils import logger
-    from scriptutils import this_script as script
-    from scriptutils.userinput import WPFWindow, SelectFromList
-    from revitutils import doc, selection
+selection = revit.selection.get_selection()
+my_config = script.get_config()
+logger = script.get_logger()
 
-    my_config = script.config
-
+doc = revit.doc
 
 class CheckBoxParameter:
     def __init__(self, parameter, default_state=False):
@@ -113,94 +103,20 @@ class CopyParameterWindow(WPFWindow):
         p = self.parameters_editable[self.parameterToSet.Text]
         return p
 
-    def parameter_value_get(self, parameter, conversion = True):
-        logger.debug("PARAMETER_VALUE_GET")
-        logger.debug(parameter.Definition.Name)
-        if not parameter.HasValue:
-            return
-
-        if parameter.StorageType == StorageType.Double:
-            logger.debug("parameter_value_get AsDouble")
-            x = parameter.AsDouble()
-        elif parameter.StorageType == StorageType.Integer:
-            logger.debug("parameter_value_get AsInteger")
-            x = int(parameter.AsInteger())
-        elif parameter.StorageType == StorageType.ElementId:
-            logger.debug("parameter_value_get ElementId AsInteger")
-            x = int(parameter.AsInteger())
-        else:
-            return self.parameter_value_string_get(parameter, conversion)
-        return x
-        
-    def parameter_value_string_get(self, parameter, conversion = True):
-        logger.debug("parameter_value_string_get")
-        x = None
-        if conversion:
-            try:
-                logger.debug(parameter.AsValueString())
-                x = float(parameter.AsValueString().strip().replace(",", "."))
-                logger.debug("parameter_value_string_get try1")
-
-            except:
-                pass
-            if not x:
-                try:
-                    x = float(parameter.AsString().strip().replace(".", ","))
-                    logger.debug("parameter_value_string_get try2")
-                except:
-                    pass
-            if not x:
-                try:
-                    x = float(parameter.AsString().strip().replace(",", "."))
-                    logger.debug("parameter_value_string_get try3")
-                except:
-                    pass
-            if not x:
-                try:
-                    x = float(parameter.AsString().strip().replace(".", ","))
-                    logger.debug("parameter_value_string_get try4")
-                except:
-                    pass
-        if not x:
-            x = parameter.AsString()
-            logger.debug("parameter_value_string_get AsString")
-            logger.debug(x)
-        return x
-
-    def parameter_value_set(self, parameter, parameter_get):
-        logger.debug("PARAMETER_VALUE_SET")
-        if parameter_get.StorageType != parameter.StorageType:
-            value = self.parameter_value_string_get(parameter_get)
-        else:
-            value = self.parameter_value_get(parameter_get, conversion=False)
-        logger.debug(value)
-        if parameter_get.StorageType != parameter.StorageType:
-            parameter.SetValueString(str(value))
-            logger.debug("parameter.SetValueString(value)")
-        elif parameter.StorageType == parameter_get.StorageType:
-            parameter.Set(value)
-            logger.debug("parameter.Set(value)")
-        elif parameter.StorageType == StorageType.String:
-            parameter.Set(str(value))
-            logger.debug("parameter.Set(str(value))")
-        else:
-            logger.debug("parameter.SetValueString(value)")
-            parameter.SetValueString(value)
-
     def run(self, sender, args):
         count_changed = 0
-
         # find not empty parameter
         definition_set = self.parameter_to_set.Definition
         definition_get = self.parameter_to_get.Definition
+
+        # collect ones to be updated - parameters_get which aren't empty and aren't equal
         not_empty_list = []
         skip_ids = []
         for e in self.selection:
             param = e.get_Parameter(definition_set)
             param_get = e.get_Parameter(definition_get)
-            if param.AsString() != '' and param.AsString() != None and param.AsString() != param_get.AsString():
+            if not pyap.is_empty(param) and pyap.are_equal(param, param_get):
                 not_empty_list.append("Target: %s, Source: %s" % (self.parameter_value_get(param), self.parameter_value_get(param_get)))
-
                 skip_ids.append(e.Id)
 
         if len(not_empty_list) > 0:
@@ -214,25 +130,14 @@ class CopyParameterWindow(WPFWindow):
                                 TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No)
             if a == TaskDialogResult.Yes:
                 skip_ids = []
+
         t = Transaction(doc, __title__)
         t.Start()
-
         for e in self.selection:
             if e.Id in skip_ids:
                 continue
-
-            param = e.get_Parameter(definition_set)
-            param_get = e.get_Parameter(definition_get)
-
-            if param.StorageType == param_get.StorageType:
-                if self.parameter_value_get(param, conversion=False) == self.parameter_value_get(param_get, conversion=False):
-                    continue
-
-            self.parameter_value_set(param, param_get)
-            if __debug__:
-                p_test = self.parameter_value_get(param)
-                logger.debug(p_test)
-            count_changed += 1
+            if pyap.copy_parameter(e, definition_get, definition_set):
+                count_changed += 1
 
         # TODO FIX do not write config in lower versions - risk to corrupt config
         if pyRevitNewer4619:
