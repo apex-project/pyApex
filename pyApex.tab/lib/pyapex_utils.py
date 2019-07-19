@@ -42,3 +42,6 @@ def compare_xyz(xyz1, xyz2, precision = None):
                and round(xyz1.Z, precision) == round(xyz2.Z, precision)
     else:
         return xyz1.X == xyz2.X and xyz1.Y == xyz2.Y and xyz1.Z == xyz2.Z
+
+def is_ascii(s):
+    return all(ord(c) < 128 for c in s)

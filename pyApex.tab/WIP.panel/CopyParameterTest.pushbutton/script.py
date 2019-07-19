@@ -15,7 +15,10 @@ def collect_parameters(element, prefix=""):
             result.add(p_def)
     return result
 
-
+test_values = [
+    "Input6_String_Integer -> Output7_ElementId"
+]
+test_values =[]
 def main():
     print("run")
     element = revit.doc.GetElement(DB.ElementId(element_id_int))
@@ -34,16 +37,23 @@ def main():
         else:
             for op_def in output_parameters:
                 for ip_def in input_parameters:
-                    for op_def in output_parameters:
-                        print("%s -> %s"  % (ip_def.Name, op_def.Name))
-                        param_get = element.get_Parameter(ip_def)
-                        p_get = pyap.parameter_value_get(param_get)
-                        with revit.Transaction():
-                            pyap.copy_parameter(element, ip_def, op_def)
-                        param_set = element.get_Parameter(op_def)
-                        p_set = pyap.parameter_value_get(param_set)
-                        print("%s -> %s" % (str(p_get), str(p_set)))
-                        print("\n")
+                    title = "%s -> %s"  % (ip_def.Name, op_def.Name)
+                    if test_values and title not in test_values:
+                        continue
+                    print(title)
+                    param_get = element.get_Parameter(ip_def)
+                    param_set = element.get_Parameter(op_def)
+                    p_get = pyap.parameter_value_get(param_get)
+
+                    with revit.Transaction():
+                        try:
+                            result = pyap.copy_parameter(element, ip_def, op_def)
+                            print("result: %s" % str(result))
+                        except Exception as exc:
+                            print("Exception %s" % exc)
+                    p_set = pyap.parameter_value_get(param_set)
+                    print("%s -> %s" % (str(p_get), str(p_set)))
+                    print("\n")
 
 if __name__ == '__main__':
     main()

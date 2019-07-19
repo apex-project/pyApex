@@ -15,22 +15,24 @@ except:
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
 try:
-    pyRevitNewer4619 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 6 and int(PYREVIT_VERSION.metadata[1:]) >= 24
+    pyRevitNewer4619 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 6 and int(
+        PYREVIT_VERSION.metadata[1:]) >= 24
 except:
     pyRevitNewer4619 = False
 
-
-from pyrevit import script
+from pyrevit import script, revit
 from pyrevit.forms import WPFWindow, SelectFromList
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons, TaskDialogResult
-from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType,Transaction, TransactionGroup
+from Autodesk.Revit.DB import StorageType, Transaction
 import pyapex_parameters as pyap
+import pyapex_utils
 
 selection = revit.selection.get_selection()
 my_config = script.get_config()
 logger = script.get_logger()
 
 doc = revit.doc
+
 
 class CheckBoxParameter:
     def __init__(self, parameter, default_state=False):
@@ -64,12 +66,12 @@ class CopyParameterWindow(WPFWindow):
     def read_config(self):
         # check are last parameters available
         try:
-            if my_config.parameter_to_get not in self.parameters:
+            if my_config.parameter_to_get not in self.parameters_dict.keys():
                 my_config.parameter_to_get = ""
         except:
             pass
         try:
-            if my_config.parameter_to_set not in self.parameters_editable:
+            if my_config.parameter_to_set not in self.parameters_editable.keys():
                 my_config.parameter_to_set = ""
         except:
             pass
@@ -104,52 +106,78 @@ class CopyParameterWindow(WPFWindow):
         return p
 
     def run(self, sender, args):
-        count_changed = 0
-        # find not empty parameter
-        definition_set = self.parameter_to_set.Definition
-        definition_get = self.parameter_to_get.Definition
+        try:
 
-        # collect ones to be updated - parameters_get which aren't empty and aren't equal
-        not_empty_list = []
-        skip_ids = []
-        for e in self.selection:
-            param = e.get_Parameter(definition_set)
-            param_get = e.get_Parameter(definition_get)
-            if not pyap.is_empty(param) and pyap.are_equal(param, param_get):
-                not_empty_list.append("Target: %s, Source: %s" % (self.parameter_value_get(param), self.parameter_value_get(param_get)))
-                skip_ids.append(e.Id)
+            count_changed = 0
+            # find not empty parameter
+            definition_set = self.parameter_to_set.Definition
+            definition_get = self.parameter_to_get.Definition
 
-        if len(not_empty_list) > 0:
-            len_limit = 10
-            len_not_empty_list = len(not_empty_list)
-            if len_not_empty_list > len_limit:
-                not_empty_list = not_empty_list[:len_limit] + [' + %d more...' % (len_not_empty_list - len_limit)]
+            # collect ones to be updated - parameters_get which aren't empty and aren't equal
+            not_empty_list = []
+            skip_ids = []
+            errors_list_ids = []
+            errors_list = []
+            errors_text = ""
+            for e in self.selection:
+                param = e.get_Parameter(definition_set)
+                param_get = e.get_Parameter(definition_get)
+                if not pyap.is_empty(param) and pyap.are_equal(param, param_get):
+                    not_empty_list.append("Target: %s, Source: %s" % (
+                    self.parameter_value_get(param), self.parameter_value_get(param_get)))
+                    skip_ids.append(e.Id)
 
-            text = "%d elements have values already. Replace them?\n" % len_not_empty_list + "\n".join(not_empty_list)
-            a = TaskDialog.Show(__title__, text,
-                                TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No)
-            if a == TaskDialogResult.Yes:
-                skip_ids = []
+            if len(not_empty_list) > 0:
+                len_limit = 10
+                len_not_empty_list = len(not_empty_list)
+                if len_not_empty_list > len_limit:
+                    not_empty_list = not_empty_list[:len_limit] + [' + %d more...' % (len_not_empty_list - len_limit)]
 
-        t = Transaction(doc, __title__)
-        t.Start()
-        for e in self.selection:
-            if e.Id in skip_ids:
-                continue
-            if pyap.copy_parameter(e, definition_get, definition_set):
-                count_changed += 1
+                text = "%d elements have values already. Replace them?\n" % len_not_empty_list + "\n".join(
+                    not_empty_list)
+                a = TaskDialog.Show(__title__, text,
+                                    TaskDialogCommonButtons.Yes | TaskDialogCommonButtons.No)
+                if a == TaskDialogResult.Yes:
+                    skip_ids = []
+
+            t = Transaction(doc, __title__)
+            t.Start()
+            for e in self.selection:
+                if e.Id in skip_ids:
+                    continue
+                try:
+                    if pyap.copy_parameter(e, definition_get, definition_set):
+                        count_changed += 1
+                except Exception as exc:
+                    errors_list_ids.append(e.Id)
+                    errors_list.append("Id: %d, exception: %s" % (e.Id.IntegerValue, str(exc)))
+            if errors_list:
+                errors_text = ("\n\nErrors occurred with %d elements :\n" % len(errors_list)) + \
+                              "\n".join(errors_list[:5])
+                if len(errors_list) > 5:
+                    errors_text += "\n..."
+                errors_text += "\n\nValues weren't changed, elements with errors selected"
+                selection.set_to(errors_list_ids)
+
+            if count_changed or errors_list:
+                t.Commit()
+                TaskDialog.Show(__title__,
+                                "%d of %d elements updated%s" % (count_changed, len(self.selection), errors_text))
+            else:
+                t.RollBack()
+                TaskDialog.Show(__title__, "Nothing was changed")
+            logger.debug("finished")
+        except Exception as exc:
+            logger.error(exc)
 
         # TODO FIX do not write config in lower versions - risk to corrupt config
-        if pyRevitNewer4619:
-            self.write_config()
-
-        if count_changed:
-            t.Commit()
-            TaskDialog.Show(__title__, "%d of %d elements updated" % (count_changed, len(self.selection),))
-        else:
-            t.RollBack()
-            TaskDialog.Show(__title__, "Nothing was changed")
-        logger.debug("finished")
+        if pyRevitNewer4619 or (
+                pyapex_utils.is_ascii(self.parameterToGet.Text) and
+                pyapex_utils.is_ascii(self.parameterToSet.Text)):
+            try:
+                self.write_config()
+            except:
+                logger.warn("Cannot save config")
         self.Close()
 
     def element_parameter_dict(self, elements, parameter_to_sort):
