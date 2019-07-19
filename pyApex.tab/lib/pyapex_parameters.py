@@ -17,21 +17,20 @@ UNIT_TYPES_NOT_CONVERTIBLE = [
 def is_empty(param):
     return param.AsString() != '' and param.AsString() != None
 
+
 def are_equal(param1, param2):
-    value1 = convert_value(param1, param2)
-    value2 = convert_value(param2, param1)
+    value1, value2 = convert_value(param1, param2, return_both=True)
+    logger.debug("value1: %s" % str(value1))
+    logger.debug("value2: %s" % str(value2))
     return value1 == value2
 
-def are_equal_return_value(param1, param2):
-    value1 = convert_value(param1, param2)
-    result = are_equal_value_param(value1, param1, param2)
-    return result, value1
 
-def are_equal_value_param(value1, param1, param2):
-    value2 = convert_value(param2, param1)
-    return value1 == value2
+def are_equal_return_values(param1, param2):
+    value1, value2 = convert_value(param1, param2, return_both=True)
+    return value1 == value2, value1, value2
 
-def parameter_value_string_get(parameter, conversion = True):
+
+def parameter_value_string_get(parameter, conversion=True):
     logger.debug("parameter_value_string_get")
     x = None
     if conversion:
@@ -88,7 +87,6 @@ def float_try_parse(text):
     return x
 
 
-
 def are_param_types_equal(param1, param2, storage_type=True, unit_type=True):
     if storage_type and param1.StorageType != param2.StorageType:
         logger.debug("param1.StorageType, param2.StorageType")
@@ -111,46 +109,76 @@ def are_param_types_almost_equal(param1, param2):
     return storage_type1 == storage_type2
 
 
-def parameter_value_set(parameter_set, parameter_get, value = None):
+def parameter_value_set(parameter_set, parameter_get, value_get=None, value_set_before=None):
     logger.debug("PARAMETER_VALUE_SET")
-    value_before = parameter_value_get(parameter_set)
-    if not value:
-        value = convert_value(parameter_get, parameter_set)
-
-    if not value:
+    if not value_set_before:
+        value_set_before = parameter_value_get(parameter_set)
+    if not value_get:
+        value_get, _empty = convert_value(parameter_get, parameter_set)
+    logger.debug("value_get: %s" % str(value_get))
+    logger.debug("type(value_get): %s" % str(type(value_get)))
+    if not value_get:
         raise Exception("Value is empty")
 
     # verify
     logger.debug("parameter_set.StorageType: %s" % str(parameter_set.StorageType))
     if parameter_set.StorageType == DB.StorageType.ElementId:
-        verify_element_id(parameter_set, value)
+        verify_element_id(parameter_set, value_get)
         # todo optimise verification of other types, to check before applying parameter
 
-    if are_param_types_equal(parameter_get, parameter_set):
-        parameter_set.Set(value)
-        logger.debug("parameter.Set(value)")
-        logger.debug(value)
-    elif isinstance(value, int) and parameter_set.StorageType == DB.StorageType.ElementId:
-        parameter_set.Set(DB.ElementId(value))
-        logger.debug("parameter.Set(DB.ElementId(value))")
-        logger.debug(value)
+    if parameter_set.StorageType in [DB.StorageType.Double, DB.StorageType.Integer]:
+        if isinstance(value_get, DB.ElementId):
+            value_get = value_get.IntegerValue
+        logger.debug("DB.StorageType.Double, DB.StorageType.Integer")
+        if isinstance(value_get, float) or isinstance(value_get, int):
+            logger.debug("parameter_set.Set(value_get)")
+            parameter_set.Set(value_get)
+        else:
+            logger.debug("parameter_set.SetValueString(str(value_get))")
+            parameter_set.SetValueString(str(value_get))
+
     elif parameter_set.StorageType == DB.StorageType.String:
-        parameter_set.Set(str(value))
-        logger.debug("parameter.Set(str(value))")
-        logger.debug(value)
-    # set(numerical) without conversion
-    elif (isinstance(value, int) or isinstance(value, float)) and \
-            parameter_set.StorageType in [DB.StorageType.Double, DB.StorageType.Integer] and \
-            parameter_set.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE:
-        parameter_set.Set(value)
-        logger.debug("parameter.Set(value) UNIT_TYPES_NOT_CONVERTIBLE")
-        logger.debug(value)
-    # if types aren't equal
+        logger.debug("DB.StorageType.String")
+        logger.debug("parameter_set.Set(str(value_get))")
+        parameter_set.Set(str(value_get))
+
+    elif parameter_set.StorageType == DB.StorageType.ElementId:
+        logger.debug("DB.StorageType.ElementId")
+        if isinstance(value_get, DB.ElementId):
+            logger.debug("parameter_set.Set(value_get)")
+            parameter_set.Set(value_get)
+        elif isinstance(value_get, int) or isinstance(value_get, float):
+            logger.debug("parameter.Set(DB.ElementId(value))")
+            parameter_set.Set(DB.ElementId(value_get))
+        else:
+            raise Exception("Incorrect value type for ElementId")
     else:
-        logger.debug("parameter.SetValueString(value)")
-        parameter_set.SetValueString(str(value))
-    value_after = parameter_value_get(parameter_set)
-    if(value_before == value_after):
+        raise Exception("Unexpected Storate Type")
+    # if are_param_types_equal(parameter_get, parameter_set):
+    #     parameter_set.Set(value_get)
+    #     logger.debug("parameter.Set(value)")
+    #     logger.debug(value_get)
+    # elif isinstance(value_get, int) and parameter_set.StorageType == DB.StorageType.ElementId:
+    #     parameter_set.Set(DB.ElementId(value_get))
+    #     logger.debug("parameter.Set(DB.ElementId(value))")
+    #     logger.debug(value_get)
+    # elif parameter_set.StorageType == DB.StorageType.String:
+    #     parameter_set.Set(str(value_get))
+    #     logger.debug("parameter.Set(str(value))")
+    #     logger.debug(value_get)
+    # # set(numerical) without conversion
+    # elif (isinstance(value_get, int) or isinstance(value_get, float)) and \
+    #         parameter_set.StorageType in [DB.StorageType.Double, DB.StorageType.Integer] and \
+    #         parameter_set.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE:
+    #     parameter_set.Set(value_get)
+    #     logger.debug("parameter.Set(value) UNIT_TYPES_NOT_CONVERTIBLE")
+    #     logger.debug(value_get)
+    # if types aren't equal
+    # else:
+    #     logger.debug("parameter.SetValueString(value)")
+    #     parameter_set.SetValueString(str(value_get))
+    value_set_after = parameter_value_get(parameter_set)
+    if (value_set_before == value_set_after):
         raise Exception("Cannot convert the value.")
     return True
 
@@ -173,7 +201,7 @@ def verify_element_id(parameter_set, value):
     # todo check if the element is of a certain type
 
 
-def parameter_value_get(parameter, conversion = True):
+def parameter_value_get(parameter, conversion=True):
     logger.debug("PARAMETER_VALUE_GET")
     logger.debug(parameter.Definition.Name)
     if not parameter.HasValue:
@@ -196,40 +224,84 @@ def parameter_value_get(parameter, conversion = True):
     return x
 
 
-def convert_value(parameter_get, parameter_set):
-    if not are_param_types_equal(parameter_get, parameter_set):
+def convert_value(parameter_get, parameter_set, return_both=False):
+    value_set = None
+    # try to get numerical value
 
-        # first check if storage type are equal and Double
-        logger.debug("parameter_get.StorageType: %s " % str(parameter_get.StorageType))
-        logger.debug("parameter_set.StorageType: %s " % str(parameter_set.StorageType))
-        logger.debug("parameter_get.Definition.UnitType: %s" % str(parameter_get.Definition.UnitType))
-        logger.debug("parameter_set.Definition.UnitType: %s" % str(parameter_set.Definition.UnitType))
-        if are_param_types_almost_equal(parameter_get, parameter_set) \
-                and parameter_get.StorageType in STORAGE_TYPES_NUMERICAL:
-            logger.debug("are_param_types_almost_equal(parameter_get ...")
-            value = parameter_value_get(parameter_get, conversion=False)
-            # if GET is raw and SET is not raw (should be converted)
-            if parameter_get.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE \
-                and parameter_set.Definition.UnitType not in UNIT_TYPES_NOT_CONVERTIBLE:
-                logger.debug("DB.UnitUtils.ConvertToInternalUnits to %s" % str(parameter_set.DisplayUnitType))
-                value = DB.UnitUtils.ConvertToInternalUnits(value,
-                                                            parameter_set.DisplayUnitType)
-        else:
-            logger.debug("not are_param_types_almost_equal(parameter_get ...")
-            value = parameter_value_string_get(parameter_get)
-    else:
+    # If parameters are equal, get original value
+    if are_param_types_equal(parameter_get, parameter_set):
         value = parameter_value_get(parameter_get, conversion=False)
-    return value
+        if return_both:
+            value_set = parameter_value_get(parameter_set, conversion=False)
+
+    # e.g. Length -> String, ElementId -> String
+    elif parameter_get.StorageType in STORAGE_TYPES_NUMERICAL and parameter_set.StorageType == DB.StorageType.String:
+        # e.g. Double -> String, ElementId -> String
+        if parameter_get.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE:
+            value = parameter_value_string_get(parameter_get, conversion=False)
+            if return_both:
+                value_set = parameter_value_string_get(parameter_set, conversion=False)
+        # e.g. Length -> String
+        else:
+            if parameter_get.StorageType == DB.StorageType.ElementId:
+                value = parameter_get.AsString()
+            else:
+                value = parameter_get.AsValueString()
+            if return_both:
+                value_set = parameter_get.AsString()
+    else:
+        # if not, first try to get PRE VALUE
+        if parameter_get.StorageType in STORAGE_TYPES_NUMERICAL:
+            value_get_pre = parameter_value_get(parameter_get, conversion=False)
+        else:
+            value_get_pre = parameter_value_string_get(parameter_get)
+
+        if isinstance(value_get_pre, int) or isinstance(value_get_pre, float) and \
+                parameter_set.StorageType in STORAGE_TYPES_NUMERICAL:
+            value = value_get_pre
+            if return_both:
+                value_set = parameter_value_get(parameter_set, conversion=False)
+
+            # if target is convertable.. (e.g. convert Number to Length)
+            if parameter_get.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE \
+                    and parameter_set.Definition.UnitType not in UNIT_TYPES_NOT_CONVERTIBLE:
+                logger.debug("DB.UnitUtils.ConvertToInternalUnits to %s" % str(parameter_set.DisplayUnitType))
+                logger.debug("value: %s" % str(value))
+                value = DB.UnitUtils.ConvertToInternalUnits(value, parameter_set.DisplayUnitType)
+                logger.debug("value converted: %s" % str(value))
+
+            # if source is convertable.. (e.g. convert Length to Number)
+            elif parameter_set.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE \
+                    and parameter_get.Definition.UnitType not in UNIT_TYPES_NOT_CONVERTIBLE:
+                logger.debug("DB.UnitUtils.ConvertFromInternalUnits to %s" % str(parameter_set.DisplayUnitType))
+                logger.debug("value: %s" % str(value))
+                value = DB.UnitUtils.ConvertFromInternalUnits(value, parameter_get.DisplayUnitType)
+                logger.debug("value converted: %s" % str(value))
+        elif isinstance(value_get_pre, str) and parameter_set.StorageType not in STORAGE_TYPES_NUMERICAL:
+            value = value_get_pre
+            if return_both:
+                value_set = parameter_value_string_get(parameter_set)
+        # Input is String (Text, not a number) and target is a number
+        else:
+            # raise Exception("Cannot parse string to numerical value")
+            # Try to set it anyway, for ElementId should work
+            value = value_get_pre
+            if return_both:
+                value_set = parameter_value_get(parameter_set)
+
+    return value, value_set
 
 
 def copy_parameter(element, definition_get, definition_set):
     param_set = element.get_Parameter(definition_set)
     param_get = element.get_Parameter(definition_get)
     # check if values are equal
-    are_equal_bool, value1 = are_equal_return_value(param_get, param_set)
+    are_equal_bool, value_get, value_set_before = are_equal_return_values(param_get, param_set)
+    logger.debug("are_equal_bool: %s" % str(are_equal_bool))
     if are_equal_bool:
         return False
-    return parameter_value_set(param_set, param_get, value1)
+    return parameter_value_set(param_set, param_get, value_get=value_get, value_set_before=value_set_before)
+
 
 def erase_parameter(element, definition):
     param = element.get_Parameter(definition)

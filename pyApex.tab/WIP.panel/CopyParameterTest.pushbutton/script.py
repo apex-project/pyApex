@@ -16,7 +16,10 @@ def collect_parameters(element, prefix=""):
     return result
 
 test_values = [
-    "Input6_String_Integer -> Output7_ElementId"
+    "Input1_Double -> Output2_Length",
+    "Input5_String_Float -> Output2_Length",
+    "Input2_Length -> Output4_String",
+    "Input7_ElementId -> Output3_Integer"
 ]
 test_values =[]
 def main():
@@ -45,14 +48,22 @@ def main():
                     param_set = element.get_Parameter(op_def)
                     p_get = pyap.parameter_value_get(param_get)
 
+                    if (param_get.StorageType == DB.StorageType.String):
+                        p_get_v = param_get.AsString()
+                    else:
+                        p_get_v = param_get.AsValueString()
+
                     with revit.Transaction():
                         try:
                             result = pyap.copy_parameter(element, ip_def, op_def)
                             print("result: %s" % str(result))
                         except Exception as exc:
                             print("Exception %s" % exc)
-                    p_set = pyap.parameter_value_get(param_set)
-                    print("%s -> %s" % (str(p_get), str(p_set)))
+                    if (param_set.StorageType == DB.StorageType.String):
+                        p_set_v = param_set.AsString()
+                    else:
+                        p_set_v = param_set.AsValueString()
+                    print("%s -> %s" % (p_get_v, p_set_v))
                     print("\n")
 
 if __name__ == '__main__':
