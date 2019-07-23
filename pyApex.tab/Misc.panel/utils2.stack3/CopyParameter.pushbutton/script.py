@@ -122,9 +122,9 @@ class CopyParameterWindow(WPFWindow):
             for e in self.selection:
                 param = e.get_Parameter(definition_set)
                 param_get = e.get_Parameter(definition_get)
-                if not pyap.is_empty(param) and pyap.are_equal(param, param_get):
-                    not_empty_list.append("Target: %s, Source: %s" % (
-                    self.parameter_value_get(param), self.parameter_value_get(param_get)))
+                if not pyap.is_empty(param) and not pyap.are_equal(param, param_get):
+                    value_get, value_set = pyap.convert_value(param_get, param, return_both=True)
+                    not_empty_list.append("Target: %s, Source: %s" % (value_set, value_get))
                     skip_ids.append(e.Id)
 
             if len(not_empty_list) > 0:
@@ -193,7 +193,7 @@ class CopyParameterWindow(WPFWindow):
                     return
             else:
                 param = e.get_Parameter(parameter_to_sort.Definition)
-                v = self.parameter_value_get(param)
+                v = pyap.parameter_value_get(param)
             if v:
                 result[e] = v
 

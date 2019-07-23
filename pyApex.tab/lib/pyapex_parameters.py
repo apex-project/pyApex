@@ -111,8 +111,10 @@ def are_param_types_almost_equal(param1, param2):
 
 def parameter_value_set(parameter_set, parameter_get, value_get=None, value_set_before=None):
     logger.debug("PARAMETER_VALUE_SET")
-    if not value_set_before:
-        value_set_before = parameter_value_get(parameter_set)
+    logger.debug("parameter_set:%s, parameter_get:%s, value_get:%s, value_set_before:%s" % (
+        str(parameter_set), str(parameter_get), str(value_get), str(value_set_before)))
+    # if not value_set_before:
+    #     value_set_before = parameter_value_get(parameter_set)
     if not value_get:
         value_get, _empty = convert_value(parameter_get, parameter_set)
     logger.debug("value_get: %s" % str(value_get))
@@ -177,9 +179,13 @@ def parameter_value_set(parameter_set, parameter_get, value_get=None, value_set_
     # else:
     #     logger.debug("parameter.SetValueString(value)")
     #     parameter_set.SetValueString(str(value_get))
-    value_set_after = parameter_value_get(parameter_set)
-    if (value_set_before == value_set_after):
-        raise Exception("Cannot convert the value.")
+
+    # TODO fix check. For some reason parameter isnt being changed
+    # value_set_after = parameter_value_get(parameter_set)
+    # if (value_set_before == value_set_after):
+    #     logger.debug("value_set_before: %s" % str(value_set_before))
+    #     logger.debug("value_set_after: %s" % str(value_set_after))
+    #     raise Exception("Cannot convert the value.")
     return True
 
 
@@ -300,7 +306,7 @@ def copy_parameter(element, definition_get, definition_set):
     logger.debug("are_equal_bool: %s" % str(are_equal_bool))
     if are_equal_bool:
         return False
-    return parameter_value_set(param_set, param_get, value_get=value_get, value_set_before=value_set_before)
+    return parameter_value_set(param_set, param_get, value_get=value_get) #, value_set_before=value_set_before
 
 
 def erase_parameter(element, definition):

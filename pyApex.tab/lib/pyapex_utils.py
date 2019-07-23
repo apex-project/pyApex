@@ -45,3 +45,6 @@ def compare_xyz(xyz1, xyz2, precision = None):
 
 def is_ascii(s):
     return all(ord(c) < 128 for c in s)
+
+def almost_equal(x, y, rnd=10):
+    return round(x*(10^rnd)) == round(y*(10^rnd))
