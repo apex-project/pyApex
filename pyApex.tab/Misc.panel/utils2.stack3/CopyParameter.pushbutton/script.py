@@ -2,10 +2,13 @@
 __title__ = 'Copy parameter'
 __doc__ = """Set value of one parameter to another one. Works with selected element or elements.
 
+Shift-Click: change parameters by name
+
 Записывает значение одного параметра в другой параметр выбранного элемента(ов)."""
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#copy-paramter"
 __context__ = 'Selection'
+USE_NAMES = __shiftclick__
 
 try:
     from pyrevit.versionmgr import PYREVIT_VERSION
@@ -120,8 +123,16 @@ class CopyParameterWindow(WPFWindow):
             errors_list = []
             errors_text = ""
             for e in self.selection:
-                param = e.get_Parameter(definition_set)
-                param_get = e.get_Parameter(definition_get)
+                if USE_NAMES:
+                    param = e.LookupParameter(definition_set.Name)
+                    param_get = e.LookupParameter(definition_get.Name)
+                else:
+                    param = e.get_Parameter(definition_set)
+                    param_get = e.get_Parameter(definition_get)
+
+                if not param or not param_get:
+                    logger.debug("One of parameters not found for e.Id:%d" % e.Id.IntegerValue)
+                    continue
                 if not pyap.is_empty(param) and not pyap.are_equal(param, param_get):
                     value_get, value_set = pyap.convert_value(param_get, param, return_both=True)
                     not_empty_list.append("Target: %s, Source: %s" % (value_set, value_get))
@@ -143,10 +154,19 @@ class CopyParameterWindow(WPFWindow):
             t = Transaction(doc, __title__)
             t.Start()
             for e in self.selection:
+                if USE_NAMES:
+                    param = e.LookupParameter(definition_set.Name)
+                    param_get = e.LookupParameter(definition_get.Name)
+                    if not param or not param_get:
+                        logger.debug("One of parameters not found for e.Id:%d" % e.Id.IntegerValue)
+                        continue
+                    _definition_set = param.Definition
+                    _definition_get = param_get.Definition
+
                 if e.Id in skip_ids:
                     continue
                 try:
-                    if pyap.copy_parameter(e, definition_get, definition_set):
+                    if pyap.copy_parameter(e, _definition_get, _definition_set):
                         count_changed += 1
                 except Exception as exc:
                     errors_list_ids.append(e.Id)
@@ -199,6 +219,15 @@ class CopyParameterWindow(WPFWindow):
 
         return result
 
+
+    def parameter_key(self, parameter):
+        if USE_NAMES:
+            p_key = parameter.Definition.Name
+        else:
+            p_key = parameter.Definition.Id
+        return p_key
+
+
     def get_selection_parameters(self, elements):
         """
         Get parameters which are common for all selected elements
@@ -208,29 +237,34 @@ class CopyParameterWindow(WPFWindow):
         """
         result = {}
         all_parameter_set = set()
+        all_parameter_dict = dict()
         all_parameter_ids_by_element = {}
 
         # find all ids
         for e in elements:
             for p in e.Parameters:
-                p_id = p.Definition.Id
-                all_parameter_set.add(p)
+                p_key = self.parameter_key(p)
+                if p_key not in all_parameter_dict.keys():
+                    all_parameter_dict[p_key] = p
 
                 if e.Id not in all_parameter_ids_by_element.keys():
                     all_parameter_ids_by_element[e.Id] = set()
-                all_parameter_ids_by_element[e.Id].add(p_id)
+                all_parameter_ids_by_element[e.Id].add(p_key)
 
         # filter
-        for p in all_parameter_set:
-            p_id = p.Definition.Id
-            exists_for_all_elements = True
-            for e_id, e_params in all_parameter_ids_by_element.items():
-                if p_id not in e_params:
-                    exists_for_all_elements = False
-                    break
-
-            if exists_for_all_elements:
+        if USE_NAMES: # do not filter for names
+            for p_key, p in all_parameter_dict.items():
                 result[p.Definition.Name] = p
+        else:
+            for p_key, p in all_parameter_dict.items():
+                exists_for_all_elements = True
+                for e_id, e_params in all_parameter_ids_by_element.items():
+                    if p_key not in e_params:
+                        exists_for_all_elements = False
+                        break
+
+                if exists_for_all_elements:
+                    result[p.Definition.Name] = p
 
         return result
 
