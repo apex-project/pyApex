@@ -218,6 +218,7 @@ def run(interactive=False):
         if len(elements_by_do) > 1:
             print("Design options combination %d" % (i + 1))
         grids_do = elements_by_do[i]
+        logger.debug(grids_do)
         grids_grouped = group_grids(grids_do, precision = 2)
 
         outliers = find_outlier_grids(grids_grouped)

@@ -160,8 +160,11 @@ class CopyParameterWindow(WPFWindow):
                     if not param or not param_get:
                         logger.debug("One of parameters not found for e.Id:%d" % e.Id.IntegerValue)
                         continue
-                    _definition_set = param.Definition
-                    _definition_get = param_get.Definition
+                else:
+                    param = e.get_Parameter(definition_set)
+                    param_get = e.get_Parameter(definition_get)
+                _definition_set = param.Definition
+                _definition_get = param_get.Definition
 
                 if e.Id in skip_ids:
                     continue
