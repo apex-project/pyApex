@@ -192,7 +192,11 @@ def selection_dependent():
             el_type = "Other"
         # Exclude selected element from result
         deleted_ids = filter(lambda x: x != e.Id, deleted_ids)
-        results["%s, ID: %d" % (el_type, e.Id.IntegerValue)] = group_by_type(deleted_ids)
+        try:
+            name = e.Name
+        except:
+            name = "None"
+        results["%s, ID: %d, Name: %s" % (el_type, e.Id.IntegerValue, name)] = group_by_type(deleted_ids)
 
     return results
 
