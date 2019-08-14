@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
-__title__ = 'Sum parameter'
+__title__ = 'Add/subtract param.'
+__doc__ = """Takes value from one parameter and add (or subtract) it from another parameter.
 
+Usage:
+1. Select elements which you want to process
+2. Run the script.
+3. Choose necessary parameters and options in a window
+"""
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 from Autodesk.Revit.DB import BuiltInCategory, ElementId, Definition, StorageType,Transaction, TransactionGroup
 
@@ -15,6 +21,10 @@ my_config = script.get_config()
 
 ignore_types = [StorageType.ElementId, StorageType.None, StorageType.String]
 
+OPERATIONS = {
+    "__sub__": "Subtract from",
+    "__add__": "Add to"
+}
 class CheckBoxParameter:
     def __init__(self, parameter, default_state=False):
         self.parameter = parameter
@@ -72,15 +82,22 @@ class CopyParameterWindow(WPFWindow):
         except:
             self.resetToZero.IsChecked = my_config.reset_to_zero = False
 
+        try:
+            self.operation.Text = str(my_config.operation)
+        except:
+            self.operation.Text = my_config.operation = OPERATIONS["__add__"]
+
     def write_config(self):
         my_config.parameter_to_get = self.parameterToGet.Text.encode('utf-8')
         my_config.parameter_to_set = self.parameterToSet.Text.encode('utf-8')
+        my_config.operation = self.operation.Text.encode('utf-8')
         my_config.reset_to_zero = self.resetToZero.IsChecked
         script.save_config()
 
     def _set_comboboxes(self):
         self.parameterToGet.ItemsSource = sorted(self.parameters_dict.keys())
         self.parameterToSet.ItemsSource = sorted(self.parameters_editable.keys())
+        self.operation.ItemsSource = sorted(OPERATIONS.values())
 
     @property
     def parameter_to_get(self):
@@ -91,6 +108,16 @@ class CopyParameterWindow(WPFWindow):
     def parameter_to_set(self):
         p = self.parameters_editable[self.parameterToSet.Text]
         return p
+
+    @property
+    def selected_operation(self):
+        for k, v in OPERATIONS.items():
+            if v == self.operation.Text:
+                return k
+
+    def process_operation(self, value_current, value_to_add):
+        operation_name = self.selected_operation
+        return getattr(value_current, operation_name)(value_to_add)
 
     def parameter_value_get(self, parameter):
         if not parameter.HasValue:
@@ -108,7 +135,7 @@ class CopyParameterWindow(WPFWindow):
         else:
             value = self.parameter_value_get(parameter_get)
         value_current = self.parameter_value_get(parameter)
-        parameter.Set(value_current + value)
+        parameter.Set(self.process_operation(value_current,value))
         if self.resetToZero.IsChecked:
             try:
                 parameter_get.Set(0)
@@ -154,12 +181,6 @@ class CopyParameterWindow(WPFWindow):
             param = e.get_Parameter(definition_set)
             param_get = e.get_Parameter(definition_get)
 
-            if param.StorageType == param_get.StorageType:
-                if self.parameter_value_get(param) == self.parameter_value_get(param_get):
-                    continue
-            else:
-                if self.parameter_value_get(param) == self.parameter_value_get(param_get):
-                    continue
             result = self.parameter_value_set(param, param_get)
             if result:
                 count_changed += 1
@@ -179,17 +200,8 @@ class CopyParameterWindow(WPFWindow):
     def element_parameter_dict(self, elements, parameter_to_sort):
         result = {}
         for e in elements:
-            if type(parameter_to_sort) == str:
-                if parameter_to_sort[0] == "<" and parameter_to_sort[2:] == " coordinate>":
-                    parameter_loc = parameter_to_sort[1]
-                    loc = e.Location
-                    v = getattr(loc.Point, parameter_loc)
-                else:
-                    logger.error("Parameter error")
-                    return
-            else:
-                param = e.get_Parameter(parameter_to_sort.Definition)
-                v = self.parameter_value_get(param)
+            param = e.get_Parameter(parameter_to_sort.Definition)
+            v = self.parameter_value_get(param)
             if v:
                 result[e] = v
 
