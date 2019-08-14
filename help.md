@@ -260,6 +260,18 @@ Set value of one parameter to another one. Works with selected element or elemen
 
 ---
 
+### Add / substract parameter
+
+###### EN
+
+Takes value from one parameter and add (or subtract) it from another parameter.
+
+###### RU
+
+Берет значение из одного параметра и добавляет (или вычитает) к нему другой параметр.
+
+---
+
 ### Replace text
 
 ###### EN
@@ -283,6 +295,18 @@ Links (not import) more that one RVT, IFC or CAD-formats at one click.
 ###### RU
 
 Позволяет вставить несколько связей Revit, IFC или CAD за один клик.
+
+---
+
+### Save families
+
+###### EN
+
+Saves chosen families from the project
+
+###### RU
+
+Сохраняет выбранные Семейства
 
 ---
 
