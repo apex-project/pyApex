@@ -127,6 +127,8 @@ class CopyParameterWindow(WPFWindow):
             x = parameter.AsDouble()
         elif parameter.StorageType == StorageType.Integer:
             x = int(parameter.AsInteger())
+        else:
+            x = None
         return x
 
     def parameter_value_set(self, parameter, parameter_get):
