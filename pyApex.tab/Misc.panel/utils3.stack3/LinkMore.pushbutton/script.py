@@ -11,9 +11,9 @@ import System
 import os
 clr.AddReference('System')
 
-from pyrevit import script, revit, forms
+from pyrevit import script, revit, forms, HOST_APP
 from Autodesk.Revit.DB import Document, XYZ, Transaction, DWGImportOptions, DGNImportOptions, RevitLinkOptions, RevitLinkType, \
-    RevitLinkInstance, ImportUnit, View, ElementId, ModelPathUtils, UnitSystem
+    RevitLinkInstance, ImportUnit, View, ElementId, ModelPathUtils, UnitSystem, SaveAsOptions
 from pyrevit.revit import doc, selection, uidoc
 
 logger = script.get_logger()
@@ -138,10 +138,13 @@ def link_method_ifc():
         o = RevitLinkOptions(False)
         # create empty doc
         if recreate:
-            new_doc = doc.Application.NewProjectDocument(UnitSystem.Metric)
-            new_doc.SaveAs(f_cache)
-            new_doc.Close(False)
-        link_load_results = RevitLinkType.CreateFromIFC(doc, f, f_cache, recreate, o)
+            doc_ifc = HOST_APP.app.OpenIFCDocument(f)
+            save_options = SaveAsOptions()
+            save_options.OverwriteExistingFile = True
+            doc_ifc.SaveAs(f_cache, save_options)
+            doc_ifc.Close()
+
+        link_load_results = RevitLinkType.CreateFromIFC(doc, f, f_cache, False, o)
         # TODO log results http://www.revitapidocs.com/2019/11b095e1-24d9-91b9-ae2e-004f67c94d6e.htm
         logger.debug(link_load_results.LoadResult)
         instance = RevitLinkInstance.Create(doc, link_load_results.ElementId)
