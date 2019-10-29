@@ -96,6 +96,8 @@ def process(datafile, saved_list=[], reverse=False):
     is_error = False
     try:
         for constraint in constraints_to_change:
+            if not constraint:
+                continue
             constraint.IsLocked = True if reverse else False
             if not reverse:
                 saved_list.append(constraint.Id.IntegerValue)
@@ -114,7 +116,8 @@ def process(datafile, saved_list=[], reverse=False):
     if not is_error:
         save(datafile, saved_list)
     # filter not existing
-    selection.set_to([e.Id for e in constraints_to_change if e.IsValidObject])
+    selection.set_to([e.Id for e in constraints_to_change
+                      if e and e.IsValidObject])
 
 
 def main():
