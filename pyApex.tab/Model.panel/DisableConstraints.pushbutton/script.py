@@ -113,7 +113,8 @@ def process(datafile, saved_list=[], reverse=False):
 
     if not is_error:
         save(datafile, saved_list)
-    selection.set_to(map(lambda e: e.Id, constraints_to_change))
+    # filter not existing
+    selection.set_to([e.Id for e in constraints_to_change if e.IsValidObject])
 
 
 def main():
