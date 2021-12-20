@@ -13,7 +13,7 @@ import math
 import itertools
 from Autodesk.Revit.UI import TaskDialog, TaskDialogCommonButtons
 from Autodesk.Revit.DB import *
-from typing import List, Dict, Tuple
+# from typing import List, Dict, Tuple
 
 def get_grids(view_id=None, ids=False):
     """
