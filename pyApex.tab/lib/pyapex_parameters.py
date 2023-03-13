@@ -3,32 +3,58 @@ from pyrevit import script, revit, DB, HOST_APP
 
 logger = script.get_logger()
 
-STORAGE_TYPES_NUMERICAL = [
-    DB.StorageType.Double,
-    DB.StorageType.Integer,
-    DB.StorageType.ElementId
-]
+# define globals
 
-# FIXME workaround - UnitType is deprecated since 2021
-FORGE_TYPES_NOT_CONVERTIBLE = [None]
+STORAGE_TYPES_NUMERICAL = None
+FORGE_TYPES_NOT_CONVERTIBLE = None
+UNIT_TYPES_NON_CONVERTIBLE = None
+PARAM_ATTR_MAP = None
 
-if HOST_APP.is_newer_than(2020):
-    FORGE_TYPES_NOT_CONVERTIBLE.extend(
-        [
-            DB.SpecTypeId.Number,
-        ])
-else:
-    FORGE_TYPES_NOT_CONVERTIBLE.extend(
-        [
-            DB.UnitType.UT_Number,
-            DB.UnitType.UT_Undefined
-        ])
 
-PARAM_ATTR_MAP = {
-    int(DB.BuiltInParameter.SHEET_NUMBER): "SheetNumber"
-}
+def get_storage_types_numerical():
+    global STORAGE_TYPES_NUMERICAL
+    if not STORAGE_TYPES_NUMERICAL:
+        STORAGE_TYPES_NUMERICAL = [
+            DB.StorageType.Double,
+            DB.StorageType.Integer,
+            DB.StorageType.ElementId
+        ]
+    return STORAGE_TYPES_NUMERICAL
 
-SKIP_ATTRS = []
+
+def get_unit_types_non_convertible():
+    global UNIT_TYPES_NON_CONVERTIBLE
+    if UNIT_TYPES_NON_CONVERTIBLE is None:
+        UNIT_TYPES_NON_CONVERTIBLE = [
+                None,
+                DB.UnitType.UT_Number,
+                DB.UnitType.UT_Undefined
+            ]
+    return UNIT_TYPES_NON_CONVERTIBLE
+    
+    
+def get_forge_types_non_convertible():
+    global FORGE_TYPES_NOT_CONVERTIBLE
+    if FORGE_TYPES_NOT_CONVERTIBLE is None:
+        FORGE_TYPES_NOT_CONVERTIBLE = [
+            DB.ForgeTypeId("autodesk.spec.aec:number-1.0.0"),
+            DB.ForgeTypeId("autodesk.spec:spec.string-1.0.0")
+            ]
+        logger.debug("FORGE_TYPES_NOT_CONVERTIBLE:")
+        logger.debug(FORGE_TYPES_NOT_CONVERTIBLE)
+    return FORGE_TYPES_NOT_CONVERTIBLE
+
+
+def get_param_attr_map():
+    global PARAM_ATTR_MAP
+    if PARAM_ATTR_MAP is None:
+        PARAM_ATTR_MAP = {
+            int(DB.BuiltInParameter.SHEET_NUMBER): "SheetNumber"
+        }
+    return PARAM_ATTR_MAP
+
+
+# defs
 
 
 def is_empty(param):
@@ -106,13 +132,13 @@ def float_try_parse(text):
 
 def are_param_types_equal(param1, param2, storage_type=True, unit_type=True):
     if storage_type and param1.StorageType != param2.StorageType:
-        logger.debug("param1.StorageType, param2.StorageType")
-        logger.debug("%s, %s" % (str(param1.StorageType), str(param2.StorageType)))
+        logger.debug("param1.StorageType != param2.StorageType")
+        logger.debug("%s != %s" % (str(param1.StorageType), str(param2.StorageType)))
         return False
     if unit_type and get_def_forgetypeid(param1.Definition) != get_def_forgetypeid(param2.Definition):
-        logger.debug("param1.Definition.GetDataType(), param2.Definition.GetDataType()")
-        logger.debug("%s, %s" % (str(get_def_forgetypeid(param1.Definition)),
-                                 str(get_def_forgetypeid(param2.Definition))))
+        logger.debug("param1.Definition.GetDataType() != param2.Definition.GetDataType()")
+        logger.debug("%s != %s" % (str(get_def_forgetypeid(param1.Definition)),
+                                   str(get_def_forgetypeid(param2.Definition))))
         return False
     return True
 
@@ -120,9 +146,9 @@ def are_param_types_equal(param1, param2, storage_type=True, unit_type=True):
 def are_param_types_almost_equal(param1, param2):
     storage_type1 = param1.StorageType
     storage_type2 = param2.StorageType
-    if storage_type1 in STORAGE_TYPES_NUMERICAL:
+    if storage_type1 in get_storage_types_numerical():
         storage_type1 = DB.StorageType.Integer
-    if storage_type2 in STORAGE_TYPES_NUMERICAL:
+    if storage_type2 in get_storage_types_numerical():
         storage_type2 = DB.StorageType.Integer
     return storage_type1 == storage_type2
 
@@ -249,46 +275,55 @@ def parameter_value_get(parameter, conversion=True):
 
 
 def convert_value(parameter_get, parameter_set, return_both=False):
+    logger.debug("CONVERT_VALUE")
     value_set = None
     # try to get numerical value
 
     # If parameters are equal, get original value
     if are_param_types_equal(parameter_get, parameter_set):
+        logger.debug("param types are equal")
         value = parameter_value_get(parameter_get, conversion=False)
         if return_both:
             value_set = parameter_value_get(parameter_set, conversion=False)
 
     # e.g. Length -> String, ElementId -> String
-    elif parameter_get.StorageType in STORAGE_TYPES_NUMERICAL and parameter_set.StorageType == DB.StorageType.String:
+    elif parameter_get.StorageType in get_storage_types_numerical() \
+            and parameter_set.StorageType == DB.StorageType.String:
+        logger.debug("param types are not equal (get Numerical -> set String)")
         # e.g. Double -> String, ElementId -> String
-        if get_def_forgetypeid(parameter_get.Definition) in FORGE_TYPES_NOT_CONVERTIBLE:
-            value = parameter_value_string_get(parameter_get, conversion=False)
-            if return_both:
-                value_set = parameter_value_string_get(parameter_set, conversion=False)
-        # e.g. Length -> String
-        else:
+        if is_parameter_convertible(parameter_get):
+            logger.debug("parameter_get is convertible: %s" % get_def_forgetypeid(parameter_get.Definition))
             if parameter_get.StorageType == DB.StorageType.ElementId:
                 value = parameter_get.AsString()
             else:
                 value = parameter_get.AsValueString()
             if return_both:
                 value_set = parameter_get.AsString()
+        else:
+            logger.debug("parameter_get is not convertible: %s" % get_def_forgetypeid(parameter_get.Definition))
+            value = parameter_value_string_get(parameter_get, conversion=False)
+            if return_both:
+                value_set = parameter_value_string_get(parameter_set, conversion=False)
+            # e.g. Length -> String
     else:
+        logger.debug("param types are not equal (any -> any)")
         # if not, first try to get PRE VALUE
-        if parameter_get.StorageType in STORAGE_TYPES_NUMERICAL:
+        if parameter_get.StorageType in get_storage_types_numerical():
+            logger.debug("parameter_get.StorageType in STORAGE_TYPES_NUMERICAL")
             value_get_pre = parameter_value_get(parameter_get, conversion=False)
         else:
             value_get_pre = parameter_value_string_get(parameter_get)
 
         if isinstance(value_get_pre, int) or isinstance(value_get_pre, float) and \
-                parameter_set.StorageType in STORAGE_TYPES_NUMERICAL:
+                parameter_set.StorageType in get_storage_types_numerical():
+            logger.debug("value_get is int or float; param_set is also numerical")
             value = value_get_pre
             if return_both:
                 value_set = parameter_value_get(parameter_set, conversion=False)
 
             # if target is convertable.. (e.g. convert Number to Length)
-            if get_def_forgetypeid(parameter_get.Definition) in FORGE_TYPES_NOT_CONVERTIBLE \
-                    and get_def_forgetypeid(parameter_set.Definition) not in FORGE_TYPES_NOT_CONVERTIBLE:
+            if not is_parameter_convertible(parameter_get) and is_parameter_convertible(parameter_set):
+                logger.debug("value get is non-convertible, but set is convertible")
                 logger.debug("value: %s" % str(value))
                 # FIXME workaround for Revit older than 2021 when UnitType was deprecated
                 if HOST_APP.is_newer_than(2020):
@@ -301,8 +336,8 @@ def convert_value(parameter_get, parameter_set, return_both=False):
                 logger.debug("value converted: %s" % str(value))
 
             # if source is convertable.. (e.g. convert Length to Number)
-            elif get_def_forgetypeid(parameter_set.Definition) in FORGE_TYPES_NOT_CONVERTIBLE \
-                    and get_def_forgetypeid(parameter_get.Definition) not in FORGE_TYPES_NOT_CONVERTIBLE:
+            elif is_parameter_convertible(parameter_get) and not is_parameter_convertible(parameter_set):
+                logger.debug("value get is convertible, but set is non-convertible")
                 logger.debug("value: %s" % str(value))
                 # FIXME workaround for Revit older than 2021 when UnitType was deprecated
                 if HOST_APP.is_newer_than(2020):
@@ -313,12 +348,15 @@ def convert_value(parameter_get, parameter_set, return_both=False):
                     value = DB.UnitUtils.ConvertFromInternalUnits(value, parameter_get.DisplayUnitType)
 
                 logger.debug("value converted: %s" % str(value))
-        elif isinstance(value_get_pre, str) and parameter_set.StorageType not in STORAGE_TYPES_NUMERICAL:
+
+        elif isinstance(value_get_pre, str) and parameter_set.StorageType not in get_storage_types_numerical():
+            logger.debug("value_get is str or float; param_set is numerical")
             value = value_get_pre
             if return_both:
                 value_set = parameter_value_string_get(parameter_set)
         # Input is String (Text, not a number) and target is a number
         else:
+            logger.debug("other case - no conversion needed")
             # raise Exception("Cannot parse string to numerical value")
             # Try to set it anyway, for ElementId should work
             value = value_get_pre
@@ -484,8 +522,8 @@ def filter_editable(elements,
 
         elif override_attrs:
             param_id = param.Definition.Id.IntegerValue
-            if param_id in PARAM_ATTR_MAP.keys():
-                param_name = PARAM_ATTR_MAP[param_id]
+            if param_id in get_param_attr_map().keys():
+                param_name = get_param_attr_map()[param_id]
                 editable_attrs.append(param_name)
                 parameters[name] = param_name
     if dry_transaction:
@@ -521,3 +559,22 @@ def get_def_forgetypeid(definition):
         return definition.GetDataType()
     else:
         return definition.UnitType
+
+
+def is_forgetypeid_convertible(forge_type_id):
+    """
+    Check if ForgeTypeId is convertible (not mentioned in list)
+    """
+    if "ForgeTypeId" in dir(DB) and isinstance(forge_type_id, DB.ForgeTypeId):
+        if not forge_type_id:
+            return False
+        for _fti in get_forge_types_non_convertible():
+            if _fti.NameEquals(forge_type_id):
+                return False
+        return True
+    else:
+        return forge_type_id not in get_unit_types_non_convertible()
+
+
+def is_parameter_convertible(param):
+    return is_forgetypeid_convertible(get_def_forgetypeid(param.Definition))

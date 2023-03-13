@@ -1,3 +1,14 @@
+# THIS PROJECT IS NOT MAINTAINED
+
+Unfortunately I do not have enough time to add new scripts to pyapex extension.
+Sorry that I am not always able to address new issues promptly.
+
+Though I will still try to find time to merge pull request. Therefore, pull requests are welcome and in a priority for me. So if you really need a script to 
+be fixed, do not hesitate to try it on your own and make a PR or at least send a fix as a .py file using issues or per email at alex@hiteca.ru
+
+
+---
+
 # Extension for pyRevit 
 
 An extension for [pyRevit](http://eirannejad.github.io/pyRevit/)
@@ -5,6 +16,8 @@ An extension for [pyRevit](http://eirannejad.github.io/pyRevit/)
 https://apex-project.github.io/pyApex
 
 ## Updates:
+
+**2019-08-14** UPD: Copy Parameter script fixed for Revit 2022 and 2023
 
 **2019-08-14** New features: Sum/substract parameters; Save selected families
 
