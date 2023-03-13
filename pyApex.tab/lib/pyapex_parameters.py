@@ -1,4 +1,5 @@
-from pyrevit import script, DB
+import inspect
+from pyrevit import script, revit, DB, HOST_APP
 
 logger = script.get_logger()
 
@@ -7,11 +8,27 @@ STORAGE_TYPES_NUMERICAL = [
     DB.StorageType.Integer,
     DB.StorageType.ElementId
 ]
-UNIT_TYPES_NOT_CONVERTIBLE = [
-    None,
-    DB.UnitType.UT_Number,
-    DB.UnitType.UT_Undefined
-]
+
+# FIXME workaround - UnitType is deprecated since 2021
+FORGE_TYPES_NOT_CONVERTIBLE = [None]
+
+if HOST_APP.is_newer_than(2020):
+    FORGE_TYPES_NOT_CONVERTIBLE.extend(
+        [
+            DB.SpecTypeId.Number,
+        ])
+else:
+    FORGE_TYPES_NOT_CONVERTIBLE.extend(
+        [
+            DB.UnitType.UT_Number,
+            DB.UnitType.UT_Undefined
+        ])
+
+PARAM_ATTR_MAP = {
+    int(DB.BuiltInParameter.SHEET_NUMBER): "SheetNumber"
+}
+
+SKIP_ATTRS = []
 
 
 def is_empty(param):
@@ -92,9 +109,10 @@ def are_param_types_equal(param1, param2, storage_type=True, unit_type=True):
         logger.debug("param1.StorageType, param2.StorageType")
         logger.debug("%s, %s" % (str(param1.StorageType), str(param2.StorageType)))
         return False
-    if unit_type and param1.Definition.UnitType != param2.Definition.UnitType:
-        logger.debug("param1.Definition.UnitType, param2.Definition.UnitType")
-        logger.debug("%s, %s" % (str(param1.Definition.UnitType), str(param2.Definition.UnitType)))
+    if unit_type and get_def_forgetypeid(param1.Definition) != get_def_forgetypeid(param2.Definition):
+        logger.debug("param1.Definition.GetDataType(), param2.Definition.GetDataType()")
+        logger.debug("%s, %s" % (str(get_def_forgetypeid(param1.Definition)),
+                                 str(get_def_forgetypeid(param2.Definition))))
         return False
     return True
 
@@ -243,7 +261,7 @@ def convert_value(parameter_get, parameter_set, return_both=False):
     # e.g. Length -> String, ElementId -> String
     elif parameter_get.StorageType in STORAGE_TYPES_NUMERICAL and parameter_set.StorageType == DB.StorageType.String:
         # e.g. Double -> String, ElementId -> String
-        if parameter_get.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE:
+        if get_def_forgetypeid(parameter_get.Definition) in FORGE_TYPES_NOT_CONVERTIBLE:
             value = parameter_value_string_get(parameter_get, conversion=False)
             if return_both:
                 value_set = parameter_value_string_get(parameter_set, conversion=False)
@@ -269,19 +287,31 @@ def convert_value(parameter_get, parameter_set, return_both=False):
                 value_set = parameter_value_get(parameter_set, conversion=False)
 
             # if target is convertable.. (e.g. convert Number to Length)
-            if parameter_get.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE \
-                    and parameter_set.Definition.UnitType not in UNIT_TYPES_NOT_CONVERTIBLE:
-                logger.debug("DB.UnitUtils.ConvertToInternalUnits to %s" % str(parameter_set.DisplayUnitType))
+            if get_def_forgetypeid(parameter_get.Definition) in FORGE_TYPES_NOT_CONVERTIBLE \
+                    and get_def_forgetypeid(parameter_set.Definition) not in FORGE_TYPES_NOT_CONVERTIBLE:
                 logger.debug("value: %s" % str(value))
-                value = DB.UnitUtils.ConvertToInternalUnits(value, parameter_set.DisplayUnitType)
+                # FIXME workaround for Revit older than 2021 when UnitType was deprecated
+                if HOST_APP.is_newer_than(2020):
+                    logger.debug("DB.UnitUtils.ConvertToInternalUnits to %s" % str(parameter_set.GetUnitTypeId()))
+                    value = DB.UnitUtils.ConvertToInternalUnits(value, parameter_set.GetUnitTypeId())
+                else:
+                    logger.debug("DB.UnitUtils.ConvertToInternalUnits to %s" % str(parameter_set.DisplayUnitType))
+                    value = DB.UnitUtils.ConvertToInternalUnits(value, parameter_set.DisplayUnitType)
+
                 logger.debug("value converted: %s" % str(value))
 
             # if source is convertable.. (e.g. convert Length to Number)
-            elif parameter_set.Definition.UnitType in UNIT_TYPES_NOT_CONVERTIBLE \
-                    and parameter_get.Definition.UnitType not in UNIT_TYPES_NOT_CONVERTIBLE:
-                logger.debug("DB.UnitUtils.ConvertFromInternalUnits to %s" % str(parameter_set.DisplayUnitType))
+            elif get_def_forgetypeid(parameter_set.Definition) in FORGE_TYPES_NOT_CONVERTIBLE \
+                    and get_def_forgetypeid(parameter_get.Definition) not in FORGE_TYPES_NOT_CONVERTIBLE:
                 logger.debug("value: %s" % str(value))
-                value = DB.UnitUtils.ConvertFromInternalUnits(value, parameter_get.DisplayUnitType)
+                # FIXME workaround for Revit older than 2021 when UnitType was deprecated
+                if HOST_APP.is_newer_than(2020):
+                    logger.debug("DB.UnitUtils.ConvertFromInternalUnits to %s" % str(parameter_set.GetUnitTypeId()))
+                    value = DB.UnitUtils.ConvertFromInternalUnits(value, parameter_get.GetUnitTypeId())
+                else:
+                    logger.debug("DB.UnitUtils.ConvertFromInternalUnits to %s" % str(parameter_set.DisplayUnitType))
+                    value = DB.UnitUtils.ConvertFromInternalUnits(value, parameter_get.DisplayUnitType)
+
                 logger.debug("value converted: %s" % str(value))
         elif isinstance(value_get_pre, str) and parameter_set.StorageType not in STORAGE_TYPES_NUMERICAL:
             value = value_get_pre
@@ -306,7 +336,7 @@ def copy_parameter(element, definition_get, definition_set):
     logger.debug("are_equal_bool: %s" % str(are_equal_bool))
     if are_equal_bool:
         return False
-    return parameter_value_set(param_set, param_get, value_get=value_get) #, value_set_before=value_set_before
+    return parameter_value_set(param_set, param_get, value_get=value_get)  #, value_set_before=value_set_before
 
 
 def erase_parameter(element, definition):
@@ -319,3 +349,175 @@ def erase_parameter(element, definition):
         param.Set.Overloads[DB.ElementId](DB.ElementId.InvalidElementId)
     else:
         param.Set.Overloads[str](None)
+
+
+def get_selection_parameters(elements,
+                             ignore_types=(),
+                             attributes=True,
+                             attr_allow_types=(str, int, float),
+                             check_on_all_elements=True,
+                             mlogger=None):
+    """
+    Get parameters which are common for all selected elements
+
+    :param elements: list of elements
+    :param ignore_types: list of StorageTypes to ignore
+    :param attributes: if True, also API-attributes of elements will be shown
+    :param attr_allow_types: list of types which are allowed for attributes (e.g. str, int, float)
+    :param check_on_all_elements: if True, the parameter will be shown only if it is present on all elements
+    :param mlogger: logger
+
+    :return: dict of parameters
+    """
+    result = {}
+    all_parameter_ids_by_element = {}
+    definition_parameter_dict = {}
+    all_attributes_by_type = {}  # list of processed classes
+    # find all ids
+    for e in elements:
+        for p in e.Parameters:
+            if p.StorageType in ignore_types:
+                continue
+            p_id = p.Definition.Id
+            definition_parameter_dict[p_id] = p
+            if e.Id not in all_parameter_ids_by_element.keys():
+                all_parameter_ids_by_element[e.Id] = set()
+            all_parameter_ids_by_element[e.Id].add(p_id)
+
+        if attributes and type(e) not in all_attributes_by_type.keys():
+            for attr_name in dir(e):
+                if inspect.ismethod(attr_name):
+                    continue
+                if attr_name.startswith(
+                        "__") or attr_name in SKIP_ATTRS:
+                    continue
+                is_readable=False
+                try:
+                    attr_value = getattr(e, attr_name)
+                    if isinstance(attr_value, attr_allow_types) and \
+                            (bool in attr_allow_types
+                             or not isinstance(attr_value, bool)):
+
+                        is_readable=True
+                except Exception as exc:
+                    if mlogger:
+                        mlogger.debug(exc)
+                    continue
+                if is_readable:
+                    p_id = "[%s]" % attr_name
+                    definition_parameter_dict[p_id] = attr_name
+                    if type(e) not in all_attributes_by_type.keys():
+                        all_attributes_by_type[type(e)] = set()
+                    all_attributes_by_type[type(e)].add(p_id)
+
+    # filter
+    for p_id, param in definition_parameter_dict.items():
+        exists_for_all_elements = True
+        if check_on_all_elements:
+            if isinstance(param, str):
+                for el_type, type_params in all_attributes_by_type.items():
+                    if p_id not in type_params:
+                        exists_for_all_elements = False
+                        break
+            else:
+                for e_id, e_params in all_parameter_ids_by_element.items():
+                    if p_id not in e_params:
+                        exists_for_all_elements = False
+                        break
+
+        if exists_for_all_elements:
+            if isinstance(param, str):
+                result[p_id] = param
+            else:
+                p_def = param.Definition
+                # skip duplicates by name, if existing one is modifiable
+                if p_def.Name in result.keys():
+                    if mlogger:
+                        mlogger.debug(
+                            "exists %s %d" % (p_def.Name, p_def.Id.IntegerValue))
+                    if not result[p_def.Name].IsReadOnly:
+                        if mlogger:
+                            mlogger.debug(
+                                "skip %s %d" % (p_def.Name, p_def.Id.IntegerValue))
+                        continue
+                # add to results
+                if mlogger:
+                    mlogger.debug("add %s %d" % (p_def.Name, p_def.Id.IntegerValue))
+                result[p_def.Name] = param
+
+    return result
+
+
+def filter_editable(elements,
+                    parameters,
+                    override_attrs=True,
+                    ignore_types=(DB.StorageType.ElementId,),
+                    mlogger=None):
+    """
+    Filter parameters which can be modified by users
+
+    :param elements: list of elements
+    :param parameters: list of parameters
+    :param override_attrs: if True, attribies with identical names will be shown separately (TODO check)
+    :param ignore_types: list of StorageTypes to ignore
+    :param mlogger: logger
+
+    :return: filtered list of parameters
+    """
+
+    # get exceptions
+    dry_transaction = None
+    editable_attrs = []
+    for name, param in parameters.items():
+        if isinstance(param, str):
+            if not dry_transaction:
+                dry_transaction = DB.Transaction(revit.doc, "dry_transaction")
+                dry_transaction.Start()
+            for element in elements:
+                try:
+                    setattr(element, param, "0")
+                    editable_attrs.append(param)
+                    break
+                except Exception as exc:
+                    if mlogger:
+                        mlogger.debug("filter_editable attr exc %s" % exc)
+
+        elif override_attrs:
+            param_id = param.Definition.Id.IntegerValue
+            if param_id in PARAM_ATTR_MAP.keys():
+                param_name = PARAM_ATTR_MAP[param_id]
+                editable_attrs.append(param_name)
+                parameters[name] = param_name
+    if dry_transaction:
+        if not dry_transaction.HasEnded():
+            dry_transaction.RollBack()
+
+    result = {n: p for n, p in parameters.iteritems()
+              if (isinstance(p, str)
+                  and p in editable_attrs)
+              or (not isinstance(p,str)
+                  and not p.IsReadOnly and p.StorageType not in ignore_types)}
+    return result
+
+
+def definition_or_name(param):
+    """
+    Get parameter definition or name
+    """
+    if isinstance(param, str):
+        return param
+    else:
+        return param.Definition
+
+
+def get_def_forgetypeid(definition):
+    """
+    Workaround to get the script working in Revit <2021 and <2022
+    (UnitType is deprecated since 2021 though still available,
+    GetSpecTypeId() added in 2021 and deprecated in 2022,
+    GetDataType() available since 2022)
+    """
+    if HOST_APP.is_newer_than(2021):
+        return definition.GetDataType()
+    else:
+        return definition.UnitType
