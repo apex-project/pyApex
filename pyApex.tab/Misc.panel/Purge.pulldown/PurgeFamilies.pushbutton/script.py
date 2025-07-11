@@ -17,40 +17,37 @@ Available cleaners:
 
 __helpurl__ = "https://apex-project.github.io/pyApex/help#purge-families"
 
-try:
-    from pyrevit.versionmgr import PYREVIT_VERSION
-except:
-    from pyrevit import versionmgr
-    PYREVIT_VERSION = versionmgr.get_pyrevit_version()
+# Force using newer pyRevit API
+from pyrevit import script, revit
+from pyrevit.revit import doc
+from pyrevit.forms import SelectFromList
+output = script.get_output()
+logger = script.get_logger()
+linkify = output.linkify
+selection = revit.get_selection()
+my_config = script.get_config()
 
-pyRevitNewer44 = PYREVIT_VERSION.major >=4 and PYREVIT_VERSION.minor >=5
-
-if pyRevitNewer44:
-    from pyrevit import script, revit
-    from pyrevit.revit import doc
-    from pyrevit.forms import SelectFromList
-    output = script.get_output()
-    logger = script.get_logger()
-    linkify = output.linkify
-    selection = revit.get_selection()
-    my_config = script.get_config()
-else:
-    from scriptutils import logger, this_script as script
-    from revitutils import doc, selection
-    from scriptutils.userinput import SelectFromList
-    output = script.output
-    my_config = script.config
+# Set pyRevitNewer44 to True to avoid old API usage
+pyRevitNewer44 = True
 
 
 def config_temp_dir():
     try:
         v = my_config.temp_dir
     except:
-        import purge_families_defaults as cdef
-        v = cdef.temp_dir
+        try:
+            import purge_families_defaults as cdef
+            v = cdef.temp_dir
+        except:
+            # If defaults file doesn't exist, use system temp directory
+            import tempfile
+            v = tempfile.gettempdir()
         
         my_config.temp_dir = v
-        script.save_config()
+        try:
+            script.save_config()
+        except:
+            pass
     if isinstance(v, list):
         v = v[0]
     return v
@@ -122,43 +119,70 @@ def dependencies_find(document, element, result=None):
     Returns:
         result: Source list + new element ids
     """
-    params = element.Parameters
-
     if not result:
         result = []
 
-    for p in params:
-        if not p.HasValue:
-            continue
-        if p.StorageType != StorageType.ElementId:
-            continue
-
-        e_id_child = p.AsElementId().IntegerValue
-        if e_id_child > 0:
-
-            result.append(e_id_child)
-            e_child = document.GetElement(p.AsElementId())
-
-            if e_child.GetType() == FamilySymbol or e_child.GetType() == AnnotationSymbolType:
-                # print("Family symbol", e_child.Family.Id)
-                f_id = e_child.Family.Id
-                if f_id:
-                    result.append(f_id.IntegerValue)
-
     try:
-        e_type_id = element.GetTypeId()
-        if e_type_id:
-            result.append(e_type_id.IntegerValue)
-    except Exception as e:
-        pass
-    try:
-        line_style = element.LineStyle
-        if line_style:
-            bprint("\t\tLineStyle " + str(line_style.Id.IntegerValue))
-            result.append(line_style.Id.IntegerValue)
-    except Exception as e:
-        pass
+        # Check if element is valid
+        if not element or not element.IsValidObject:
+            return result
+            
+        params = element.Parameters
+        if not params:
+            return result
 
+        for p in params:
+            try:
+                # Check if parameter is valid before accessing properties
+                if not p or not p.HasValue:
+                    continue
+                    
+                # Safely check StorageType
+                storage_type = None
+                try:
+                    storage_type = p.StorageType
+                except:
+                    continue
+                    
+                if storage_type != StorageType.ElementId:
+                    continue
+
+                e_id_child = p.AsElementId().IntegerValue
+                if e_id_child > 0:
+                    result.append(e_id_child)
+                    e_child = document.GetElement(p.AsElementId())
+
+                    if e_child and (e_child.GetType() == FamilySymbol or e_child.GetType() == AnnotationSymbolType):
+                        try:
+                            f_id = e_child.Family.Id
+                            if f_id:
+                                result.append(f_id.IntegerValue)
+                        except:
+                            pass
+            except Exception as e:
+                # Skip problematic parameters
+                continue
+
+        # Try to get type id
+        try:
+            e_type_id = element.GetTypeId()
+            if e_type_id and e_type_id.IntegerValue > 0:
+                result.append(e_type_id.IntegerValue)
+        except:
+            pass
+            
+        # Try to get line style
+        try:
+            line_style = element.LineStyle
+            if line_style and line_style.Id:
+                result.append(line_style.Id.IntegerValue)
+        except:
+            pass
+
+    except Exception as e:
+        # Log error but continue
+        logger.debug("Error in dependencies_find: %s" % str(e))
+        
     return result
 
 
@@ -183,21 +207,34 @@ def dependencies_structure(document):
     global BUILTINCATEGORIES_DICT
     result = {}
 
-    # Collect all elements in document
-    coll1 = FilteredElementCollector(document).WhereElementIsNotElementType()
-    elements = list(coll1.ToElements())
-    coll2 = FilteredElementCollector(document).WhereElementIsElementType()
-    elements += list(coll2.ToElements())
+    try:
+        # Collect all elements in document
+        coll1 = FilteredElementCollector(document).WhereElementIsNotElementType()
+        elements = list(coll1.ToElements())
+        coll2 = FilteredElementCollector(document).WhereElementIsElementType()
+        elements += list(coll2.ToElements())
+    except Exception as e:
+        logger.error("Error collecting elements: %s" % str(e))
+        return set()
 
     # Find dependencies for each element and add it to result dict <Element> = List<Of which dependent>
     for e in elements:
-        e_id = e.Id.IntegerValue
+        try:
+            # Skip invalid elements
+            if not e or not e.IsValidObject:
+                continue
+                
+            e_id = e.Id.IntegerValue
 
-        childs = dependencies_find(document, e)
-        if len(childs) > 0:
-            if e_id not in result.keys():
-                result[e_id] = []
-            result[e_id] += childs
+            childs = dependencies_find(document, e)
+            if len(childs) > 0:
+                if e_id not in result.keys():
+                    result[e_id] = []
+                result[e_id] += childs
+        except Exception as ex:
+            # Skip problematic elements
+            logger.debug("Error processing element: %s" % str(ex))
+            continue
 
     # Flip the dict so the structure will be <Of which dependent> = List<Which are dependent>
     result_inv = invert_dict_of_lists(result)
@@ -211,44 +248,63 @@ def dependencies_structure(document):
     If family type (Generic model, Special equipment etc.) is specified as one of types parameters
     all not used elements of this type will be treated as used and will appears in result of definition.
     """
-    if not document.IsFamilyDocument:  # types can be only in FamilyDocument
-        mgr = document.FamilyManager
-        params = mgr.Parameters
+    # FIX: Changed from 'not document.IsFamilyDocument' to 'document.IsFamilyDocument'
+    try:
+        if document.IsFamilyDocument:  # types can be only in FamilyDocument
+            mgr = document.FamilyManager
+            if not mgr:
+                return result_inv_list
+                
+            params = mgr.Parameters
 
-        # Creates list of parameters with type "Family"
-        params_family = []
-        for p in params:
-            if p.Definition.ParameterType == ParameterType.FamilyType:
-                params_family.append(p)
-
-        # It is possible to get BuiltInCategory of parameter only from it value.
-        # Iterate through all the types while not empty parameter will be found to get Category of it.
-        document_types = mgr.Types
-        params_family_found = []
-        params_family_categories = []
-        for t in document_types:
-            for p in params_family:
-                if p in params_family_found:  # skip if this parameter already found
+            # Creates list of parameters with type "Family"
+            params_family = []
+            for p in params:
+                try:
+                    if p.Definition.ParameterType == ParameterType.FamilyType:
+                        params_family.append(p)
+                except:
                     continue
-                if not t.HasValue(p):  # skip if parameter is empty
+
+            # It is possible to get BuiltInCategory of parameter only from it value.
+            # Iterate through all the types while not empty parameter will be found to get Category of it.
+            document_types = mgr.Types
+            params_family_found = []
+            params_family_categories = []
+            
+            for t in document_types:
+                try:
+                    for p in params_family:
+                        if p in params_family_found:  # skip if this parameter already found
+                            continue
+                        if not t.HasValue(p):  # skip if parameter is empty
+                            continue
+                        eid = t.AsElementId(p)
+                        param_family_type = document.GetElement(eid)
+                        if param_family_type and param_family_type.Category:
+                            param_family_category = BUILTINCATEGORIES_DICT.get(param_family_type.Category.Id.IntegerValue)
+                            
+                            if param_family_category:
+                                params_family_categories.append(param_family_category)
+
+                            params_family_found.append(p)
+                except:
                     continue
-                eid = t.AsElementId(p)
-                param_family_type = document.GetElement(eid)
-                param_family_category = BUILTINCATEGORIES_DICT[param_family_type.Category.Id.IntegerValue]
 
-                if param_family_category:
-                    params_family_categories.append(param_family_category)
+            # Select elements of each of found categories and append ids to final list
+            for c in params_family_categories:
+                try:
+                    category_els = FilteredElementCollector(document).OfCategory(c).WhereElementIsElementType().ToElements()
+                    category_els = filter(lambda x: type(x) == FamilySymbol or type(x) == AnnotationSymbolType,
+                                          category_els)
+                    category_els_ids = [x.Family.Id.IntegerValue for x in category_els if x.Family]
 
-                params_family_found.append(p)
-
-        # Select elements of each of found categories and append ids to final list
-        for c in params_family_categories:
-            category_els = FilteredElementCollector(document).OfCategory(c).WhereElementIsElementType().ToElements()
-            category_els = filter(lambda x: type(x) == FamilySymbol or type(x) == AnnotationSymbolType,
-                                  category_els)
-            category_els_ids = map(lambda x: x.Family.Id.IntegerValue, category_els)
-
-            result_inv = result_inv.union(category_els_ids)
+                    # FIX: Changed from result_inv.union to result_inv_list.update
+                    result_inv_list.update(category_els_ids)
+                except:
+                    continue
+    except Exception as e:
+        logger.debug("Error processing family parameters: %s" % str(e))
 
     return result_inv_list
 
@@ -541,28 +597,6 @@ def get_familysymbol_instances(doc, fi):
                 pass
                 # print(fs.Id.IntegerValue)
     return instances
-# def purge_families_recurs(doc):
-#     doc_families = get_families(doc)
-#     # trans_man = TransactionManager.Instance
-#     for df in doc_families:
-#         if df.IsInPlace:
-#             continue
-#         famdoc = doc.EditFamily(df)
-#         # if df.Id != ElementId(764909):
-#         #     continue
-#
-#         if famdoc == None or not famdoc.IsFamilyDocument:
-#             print("Family %s is invalid" % famdoc.get_Parameter(BuiltInParameter.ALL_MODEL_TYPE_NAME).AsString())
-#             continue
-#         print(df.Name)
-#         print(purge(famdoc))
-#         fam_loaded = famdoc.LoadFamily.Overloads.Functions[3](doc, FamilyLoadOption())
-#         famdoc.Close(False)
-#
-#         # print('fam_loaded',df.Id,fam_loaded.Id)
-#         # break
-#         # for f in get_families:
-#         #     print(f)
 
 
 PURGE_RESULTS = {}
@@ -747,7 +781,7 @@ def process_purge(doc, purgers, parent=None, level=0, max_level=1, directory=Non
                     t.Commit()
                     print(f.Name + " renamed")
                 except Exception as e:
-                    t.Rollback()
+                    t.RollBack()
                     print("rename error", e)
                     continue
             # update stats - progress bar and window title
@@ -938,8 +972,13 @@ def main():
         if doc.Title[-4:] == ".rfa":
             level = 1
 
-        if __forceddebugmode__ :
-            max_level = 1
+        # Check if in debug mode (Shift+Click)
+        try:
+            if __forceddebugmode__:
+                max_level = 1
+        except:
+            # __forceddebugmode__ might not be defined
+            pass
 
         START_TIME = time.time()
         print(directory)

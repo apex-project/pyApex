@@ -6,7 +6,7 @@ except:
 
     PYREVIT_VERSION = versionmgr.get_pyrevit_version()
 
-pyRevitNewer44 = PYREVIT_VERSION.major >= 4 and PYREVIT_VERSION.minor >= 5
+pyRevitNewer44 = (PYREVIT_VERSION.major, PYREVIT_VERSION.minor) >= (4, 5)
 
 if pyRevitNewer44:
     from pyrevit import script
